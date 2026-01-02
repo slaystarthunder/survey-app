@@ -1,0 +1,82 @@
+/* [S04] Design tokens (CSS variables). */
+:root {
+  /* Typography */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* ===== Brand palette (from your scheme) ===== */
+  --primary: #5e3a7a;   /* main brand (purple) */
+  --secondary: #4a8c7a; /* supporting (teal) */
+  --accent: #ea8745;    /* energy / CTA (orange) */
+
+  /* ===== Neutrals ===== */
+  --neutral-dark: #433c5e;
+  --neutral-light: #fae7d6;
+
+  /* ===== App semantic colors ===== */
+  --bg: var(--neutral-light);
+  --fg: var(--neutral-dark);
+
+  --muted: rgba(67, 60, 94, 0.7);
+
+  /* subtle borders/surfaces for light UI */
+  --border: rgba(67, 60, 94, 0.16);
+  --surface: rgba(255, 255, 255, 0.55);
+  --surface-strong: rgba(255, 255, 255, 0.78);
+
+  /* Buttons */
+  --btn-solid-bg: var(--accent);
+  --btn-solid-fg: #ffffff;
+  --btn-ghost-fg: var(--secondary);
+  --btn-ghost-border: var(--secondary);
+
+  /* Radii */
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 18px;
+
+  /* Spacing */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 28px;
+
+  /* Shadows (tuned for light UI) */
+  --shadow-1: 0 1px 0 rgba(67, 60, 94, 0.08), 0 10px 24px rgba(67, 60, 94, 0.12);
+
+  /* Focus */
+  --focus: 0 0 0 3px rgba(234, 135, 69, 0.35);
+}
+
+/* ===== Print / PDF export ===== */
+@media print {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-flat {
+    box-shadow: none !important;
+  }
+}
+
+@page {
+  size: A4;
+  margin: 12mm;
+}
