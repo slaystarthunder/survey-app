@@ -11,9 +11,12 @@ import { runRepo } from "@core/data/runRepo";
 import { surveyRepo } from "@core/data/surveyRepo";
 import { computeSummary } from "@core/domain/computeSummary";
 
-
 import { ResultView } from "@features/results/ResultView";
 
+// Firebase “Save to account”
+import { services } from "@app/services";
+import { useAuthState } from "@infra/auth/useAuthState";
+import { runRepoFirebase } from "@infra/firebase/repos/runRepoFirebase";
 
 export function ResultPage() {
   const { runId = "" } = useParams();
@@ -21,6 +24,11 @@ export function ResultPage() {
 
   const run = useMemo(() => (runId ? runRepo.getRun(runId) : null), [runId]);
   const survey = useMemo(() => (run ? surveyRepo.get(run.surveyId) : null), [run]);
+
+  // Auth singleton (composition root)
+  const auth = useMemo(() => services.auth, []);
+  const authState = useAuthState(auth);
+  const uid = authState.user?.uid ?? null;
 
   if (!run || !survey) {
     return (
@@ -47,8 +55,21 @@ export function ResultPage() {
       onNeedsMap={() => nav("/needs")}
       onReassess={() => nav(`/intro/${survey.surveyId}`)}
       onDownload={() => nav(`/result/${run.runId}/finished`)}
-      onSave={() => {
-        alert("Saved (placeholder). Next step: wire to export / backend / share link.");
+      onSave={async () => {
+        // "Save to account" (Strategy A: explicit save)
+        if (!uid) {
+          // Not signed in -> prompt sign-in
+          await auth.signInWithGoogle();
+          return;
+        }
+
+        try {
+          await runRepoFirebase.saveRun(uid, run);
+          alert("Saved to account ✅");
+        } catch (e) {
+          console.error(e);
+          alert(`Save failed: ${e instanceof Error ? e.message : String(e)}`);
+        }
       }}
     />
   );

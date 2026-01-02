@@ -24,8 +24,8 @@
       "@features/*": ["src/features/*"],
       "@core/*": ["src/core/*"],
       "@styles/*": ["src/styles/*"],
-      "@infra/*": ["src/infra/*"]
-
+      "@infra/*": ["src/infra/*"],
+      "@app/*": ["src/app/*"]
     },
 
     /* Linting */
