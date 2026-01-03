@@ -1,6 +1,5 @@
 // /src/features/surveyRun/PromptCard.tsx
 
-import { Card } from "@ui/Card";
 import { Stack } from "@ui/Stack";
 import { Text } from "@ui/Text";
 
@@ -22,107 +21,85 @@ const LABELS: Record<number, string> = {
   7: "Strongly agree",
 };
 
-export function PromptCard(props: Props) {
-  const options: number[] = [];
-  for (let n = props.min; n <= props.max; n++) options.push(n);
-
+export function PromptCard({ question, min, max, value, onPickValue }: Props) {
   return (
-    <Card
+    <div
       style={{
-        background: "rgba(255,255,255,0.55)",
-        border: "1px solid rgba(67, 60, 94, 0.14)",
-        borderRadius: 20,
-        padding: "var(--s-4)",
-        boxShadow: "0 1px 0 rgba(67,60,94,0.06)",
+        padding: "var(--s-3)",
+        borderRadius: 18,
+        background: "rgba(255,255,255,0.12)", // faint, not “double card”
       }}
     >
-      <Stack gap={14}>
-        {/* Question */}
+      <Stack gap={12}>
         <Text
           style={{
-            fontSize: "1.25rem",
+            fontSize: 22,
             fontWeight: 800,
-            lineHeight: 1.25,
-            color: "var(--fg)",
-            padding: "0 var(--s-2)",
+            lineHeight: 1.18,
           }}
         >
-          {props.question}
+          {question}
         </Text>
 
-        {/* Divider */}
-        <div
-          style={{
-            height: 1,
-            background: "rgba(67, 60, 94, 0.12)",
-            margin: "0 var(--s-2)",
-          }}
-        />
+        <div style={{ height: 1, background: "var(--border)", opacity: 0.7 }} />
 
-        {/* Options */}
-        <Stack gap={10} style={{ padding: "0 var(--s-2)" }}>
-          {options.map((n) => {
-            const checked = props.value === n;
+        <div style={{ paddingTop: 6 }}>
+          <Stack gap={6}>
+            {Array.from({ length: max - min + 1 }).map((_, i) => {
+              const n = min + i;
+              const checked = value === n;
 
-            return (
-              <label
-                key={n}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 14,
-                  cursor: "pointer",
-                  userSelect: "none",
-
-                  padding: "12px 14px",
-                  borderRadius: "var(--r-md)",
-
-                  background: checked
-                    ? "rgba(94, 58, 122, 0.08)"
-                    : "transparent",
-
-                  transition: "background 120ms ease",
-                }}
-                onMouseEnter={(e) => {
-                  if (!checked) {
-                    e.currentTarget.style.background =
-                      "rgba(94, 58, 122, 0.04)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!checked) {
-                    e.currentTarget.style.background = "transparent";
-                  }
-                }}
-              >
-                <input
-                  type="radio"
-                  name="scale"
-                  value={n}
-                  checked={checked}
-                  onChange={() => props.onPickValue(n)}
+              return (
+                <label
+                  key={n}
                   style={{
-                    width: 18,
-                    height: 18,
-                    accentColor: "var(--primary)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
                     cursor: "pointer",
-                  }}
-                />
 
-                <Text
-                  style={{
-                    fontSize: "1.15rem",
-                    fontWeight: 650,
-                    lineHeight: 1.35,
+                    // Row geometry (closer to mock)
+                    padding: "6px 10px",
+                    borderRadius: 14,
+                    minHeight: 42,
+
+                    background: checked ? "rgba(94, 58, 122, 0.08)" : "transparent",
                   }}
                 >
-                  {n} = {LABELS[n] ?? `Option ${n}`}
-                </Text>
-              </label>
-            );
-          })}
-        </Stack>
+                  <input
+                    type="radio"
+                    name="scale"
+                    checked={checked}
+                    onChange={() => onPickValue(n)}
+                    style={{
+                      width: 18,
+                      height: 18,
+                      accentColor: "var(--primary)",
+                      flex: "0 0 auto",
+                      marginTop: 1, // helps baseline alignment with tighter text
+                    }}
+                  />
+
+                  {/* Critical part: tighter text line-height */}
+                  <span
+                    style={{
+                      fontSize: 17,
+                      fontWeight: 650,
+                      lineHeight: 1.12,
+                      color: "inherit",
+                      // This prevents odd extra spacing in some text components
+                      display: "block",
+                      paddingTop: 1,
+                    }}
+                  >
+                    {n} = {LABELS[n] ?? `Option ${n}`}
+                  </span>
+                </label>
+              );
+            })}
+          </Stack>
+        </div>
       </Stack>
-    </Card>
+    </div>
   );
 }

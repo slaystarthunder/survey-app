@@ -31,47 +31,13 @@ type Props = {
   onFinish: () => void;
 };
 
-function ProgressDots({ total, currentIndex1 }: { total: number; currentIndex1: number }) {
-  const dots = [];
-  for (let i = 1; i <= total; i++) {
-    const active = i === currentIndex1;
-    dots.push(
-      <span
-        key={i}
-        aria-hidden="true"
-        style={{
-          width: 10,
-          height: 10,
-          borderRadius: 999,
-          border: "1px solid rgba(67, 60, 94, 0.18)",
-          background: active ? "var(--primary)" : "transparent",
-          display: "inline-block",
-        }}
-      />
-    );
-  }
-
-  return <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{dots}</div>;
-}
-
 export function SurveyRunView(props: Props) {
   const inLast = props.index >= props.totalCount;
 
   return (
     <PageShell maxWidth={480}>
       <Stack gap={14} style={{ paddingTop: "var(--s-4)" }}>
-        {/* Top "chrome" row like the mock */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: "0 var(--s-2)",
-          }}
-        >
-          <ProgressDots total={props.totalCount} currentIndex1={props.index} />
-        </div>
-
+        {/* Single card like the mock (no top dots / no nested cards) */}
         <Card
           style={{
             borderRadius: 22,
@@ -80,7 +46,7 @@ export function SurveyRunView(props: Props) {
         >
           <Stack gap={14}>
             <Heading level={2} style={{ fontSize: "2rem" }}>
-              Question {props.index} / {props.totalCount}
+              Statement {props.index} / {props.totalCount}
             </Heading>
 
             <PromptCard
@@ -91,7 +57,7 @@ export function SurveyRunView(props: Props) {
               onPickValue={props.onPickValue}
             />
 
-            {/* Buttons row (more side-air + anchored) */}
+            {/* Buttons row (side inset like mock) */}
             <div style={{ paddingTop: "var(--s-2)" }}>
               <div
                 style={{
@@ -99,7 +65,7 @@ export function SurveyRunView(props: Props) {
                   justifyContent: "space-between",
                   alignItems: "center",
                   gap: "var(--s-3)",
-                  padding: "0 var(--s-2)", // <-- side inset like mock
+                  padding: "0 var(--s-2)",
                 }}
               >
                 <Button

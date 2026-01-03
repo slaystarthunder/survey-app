@@ -2,7 +2,7 @@
 // Orchestration for new result screen
 
 import { useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { PageShell } from "@ui/PageShell";
 import { Heading, Text } from "@ui/Text";
@@ -21,9 +21,17 @@ import { runRepoFirebase } from "@infra/firebase/repos/runRepoFirebase";
 export function ResultPage() {
   const { runId = "" } = useParams();
   const nav = useNavigate();
+  const loc = useLocation();
 
-  const run = useMemo(() => (runId ? runRepo.getRun(runId) : null), [runId]);
-  const survey = useMemo(() => (run ? surveyRepo.get(run.surveyId) : null), [run]);
+  const run = useMemo(
+    () => (runId ? runRepo.getRun(runId) : null),
+    [runId]
+  );
+
+  const survey = useMemo(
+    () => (run ? surveyRepo.get(run.surveyId) : null),
+    [run]
+  );
 
   // Auth singleton (composition root)
   const auth = useMemo(() => services.auth, []);
@@ -56,10 +64,9 @@ export function ResultPage() {
       onReassess={() => nav(`/intro/${survey.surveyId}`)}
       onDownload={() => nav(`/result/${run.runId}/finished`)}
       onSave={async () => {
-        // "Save to account" (Strategy A: explicit save)
+        // Phase 1 behavior: auth is explicit via /login
         if (!uid) {
-          // Not signed in -> prompt sign-in
-          await auth.signInWithGoogle();
+          nav("/login", { replace: true, state: { from: loc.pathname } });
           return;
         }
 
@@ -68,7 +75,9 @@ export function ResultPage() {
           alert("Saved to account ✅");
         } catch (e) {
           console.error(e);
-          alert(`Save failed: ${e instanceof Error ? e.message : String(e)}`);
+          alert(
+            `Save failed: ${e instanceof Error ? e.message : String(e)}`
+          );
         }
       }}
     />

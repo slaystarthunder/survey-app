@@ -41,7 +41,6 @@ function SegmentedBar({ valuePct }: { valuePct: number }) {
 }
 
 function statusToPct(status: Status) {
-  // Simple now: done = 70-ish (like mockup), not started = 0
   return status === "Done" ? 75 : 0;
 }
 
@@ -70,8 +69,13 @@ export function NeedsMapPage() {
 
   if (!first) {
     return (
-      <PageShell>
-        <div style={{ maxWidth: 560, margin: "0 auto", padding: "14px 0 28px" }}>
+      <PageShell
+        style={{
+          paddingTop: "var(--s-4)", // pull up
+          paddingBottom: "var(--s-7)",
+        }}
+      >
+        <div style={{ maxWidth: 560, margin: "0 auto" }}>
           <Stack gap={14}>
             <Heading level={2}>Your Map Of Needs</Heading>
             <Text muted>No surveys found yet. Seed one first, then come back here.</Text>
@@ -93,8 +97,13 @@ export function NeedsMapPage() {
   const selectedPct = statusToPct(selectedStatus);
 
   return (
-    <PageShell>
-      <div style={{ maxWidth: 560, margin: "0 auto", padding: "14px 0 28px" }}>
+    <PageShell
+      style={{
+        paddingTop: "var(--s-4)", // ✅ fixes “starts too low”
+        paddingBottom: "var(--s-7)",
+      }}
+    >
+      <div style={{ maxWidth: 560, margin: "0 auto" }}>
         <Card>
           <div style={{ padding: 18 }}>
             <Stack gap={14}>
@@ -105,7 +114,6 @@ export function NeedsMapPage() {
                 Without a map, you are lost. A good starting point are the universal human needs below.
               </Text>
 
-              {/* Selected area (like right mockup) */}
               <div style={{ padding: "10px 0 6px" }}>
                 <Stack gap={8}>
                   <Stack direction="row" justify="space-between" style={{ gap: 12, alignItems: "center" }}>
@@ -121,7 +129,6 @@ export function NeedsMapPage() {
 
               <div style={{ height: 1, background: "var(--border)", opacity: 0.7 }} />
 
-              {/* List */}
               <Stack gap={10}>
                 {surveys.map((s) => {
                   const isSelected = s.surveyId === selected.surveyId;

@@ -107,18 +107,19 @@ function SegmentedBar({ valuePct }: { valuePct: number }) {
   const filled = Math.round((valuePct / 100) * segments);
 
   return (
-    <div style={{ display: "flex", gap: 4 }}>
+    <div style={{ display: "flex", gap: 3 }}>
       {Array.from({ length: segments }).map((_, i) => {
         const on = i < filled;
+
         return (
           <div
             key={i}
             style={{
-              width: 18,
-              height: 12,
-              borderRadius: 3,
-              border: "1px solid var(--border)",
-              background: on ? "var(--secondary)" : "var(--surface)",
+              width: 18, // more square cells
+              height: 18, // square cells
+              borderRadius: 1, // almost no rounding
+              background: on ? "#4F8F7A" : "transparent",
+              border: on ? "1px solid transparent" : "1.5px solid rgba(0,0,0,0.18)",
             }}
           />
         );
@@ -141,43 +142,19 @@ export function ResultView({
       <div style={{ maxWidth: 560, margin: "0 auto", padding: "14px 0 28px" }}>
         <Stack gap={16}>
           {/* SECTION A — Mapping summary */}
-          <Card>
+          <Card
+            style={{
+              borderRadius: 22,
+              background: "rgba(255,255,255,0.35)",
+            }}
+          >
             <Stack gap={14}>
-              <Stack direction="row" justify="space-between" wrap="wrap" style={{ gap: 12 }}>
-                <Heading level={2}>Your mapping</Heading>
-
-                <Stack direction="row" gap={10} wrap="wrap">
-                  <Button
-                    variant="ghost"
-                    onClick={onNeedsMap}
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: 12,
-                      border: "1px solid var(--border)",
-                      background: "var(--surface)",
-                    }}
-                  >
-                    Needs Map
-                  </Button>
-
-                  <Button
-                    onClick={onReassess}
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: 12,
-                      border: "1px solid transparent",
-                      background: "var(--primary)",
-                      color: "#ffffff",
-                    }}
-                  >
-                    Reassess
-                  </Button>
-                </Stack>
-              </Stack>
+              <Heading level={2}>Your mapping</Heading>
 
               <Stack gap={12}>
                 {rows.map((r) => {
                   const p = pct(r.avg, scaleMax);
+
                   return (
                     <div key={r.categoryId} style={{ display: "grid", gap: 6 }}>
                       <Stack direction="row" justify="space-between" style={{ gap: 12 }}>
@@ -187,18 +164,44 @@ export function ResultView({
                         </Text>
                       </Stack>
 
-                      <Stack direction="row" justify="space-between" style={{ gap: 12, alignItems: "center" }}>
-                        <SegmentedBar valuePct={p} />
-                        <Text mono muted style={{ fontSize: 12, minWidth: 44, textAlign: "right" }}>
-                          {Math.round(p)}%
-                        </Text>
-                      </Stack>
+                      {/* Removed the % column; bar only */}
+                      <SegmentedBar valuePct={p} />
                     </div>
                   );
                 })}
               </Stack>
 
+              {/* Move Needs Map + Reassess BELOW the bars (like mock) */}
               <Stack direction="row" gap={10} wrap="wrap" style={{ marginTop: 6 }}>
+                <Button
+                  variant="ghost"
+                  onClick={onNeedsMap}
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: 12,
+                    border: "1px solid var(--border)",
+                    background: "var(--surface)",
+                  }}
+                >
+                  Needs Map
+                </Button>
+
+                <Button
+                  onClick={onReassess}
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: 12,
+                    border: "1px solid transparent",
+                    background: "var(--primary)",
+                    color: "#ffffff",
+                  }}
+                >
+                  Reassess
+                </Button>
+              </Stack>
+
+              {/* Keep Download/Save as-is for now */}
+              <Stack direction="row" gap={10} wrap="wrap" style={{ marginTop: 2 }}>
                 <Button
                   variant="ghost"
                   onClick={onDownload}
