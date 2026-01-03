@@ -1,3 +1,4 @@
+// /src/core/data/runRepo.ts
 // [S03] Added: Run repository (persist ResponseState). Does not compute results; stores answers only.
 
 import type { ID, ResponseState } from "../domain/types";
@@ -48,6 +49,20 @@ export const runRepo = {
   listRuns(): ResponseState[] {
     const store = readJson<RunStore>(KEY, emptyStore());
     return Object.values(store.byId);
+  },
+
+  listRunsBySurveyId(surveyId: ID): ResponseState[] {
+    return this.listRuns().filter((r) => r.surveyId === surveyId);
+  },
+
+  getLatestRunForSurvey(surveyId: ID): ResponseState | null {
+    const runs = this.listRunsBySurveyId(surveyId);
+
+    const completed = runs
+      .filter((r) => typeof r.completedAt === "number")
+      .sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0));
+
+    return completed[0] ?? null;
   },
 
   remove(runId: ID): void {

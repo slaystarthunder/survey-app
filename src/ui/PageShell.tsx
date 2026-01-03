@@ -1,5 +1,4 @@
-// [S04] Added: PageShell primitive to constrain width and provide consistent padding.
-
+// /src/ui/PageShell.tsx
 import type { CSSProperties, ReactNode } from "react";
 
 type Props = {
@@ -8,11 +7,12 @@ type Props = {
   style?: CSSProperties;
 };
 
-export function PageShell({ children, maxWidth = 980, style }: Props) {
+export function PageShell({ children, maxWidth = 480, style }: Props) {
   const s: CSSProperties = {
     maxWidth,
     margin: "0 auto",
-    padding: "var(--s-6) var(--s-4)",
+    padding: "var(--s-8) var(--s-4)", // more vertical air (closer to mock)
+    minHeight: "100vh",
     ...style,
   };
 

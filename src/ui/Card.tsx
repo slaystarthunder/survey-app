@@ -10,14 +10,20 @@ type Props = {
 };
 
 export function Card({ children, style, className }: Props) {
+  // /src/ui/Card.tsx
   const s: CSSProperties = {
     background: "var(--surface)",
     border: "1px solid var(--border)",
     borderRadius: "var(--r-lg)",
     boxShadow: "var(--shadow-1)",
-    padding: "var(--s-4)",
+  
+    // ⬇ change this
+    padding: "var(--s-5)", // was --s-4
+  
     ...style,
   };
+  
+
 
   return (
     <div className={className} style={s}>

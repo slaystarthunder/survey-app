@@ -1,3 +1,4 @@
+// /src/core/data/runRepoPort.ts
 import type { ID, ResponseState } from "@core/domain/types";
 
 export interface RunRepoPort {
@@ -7,5 +8,8 @@ export interface RunRepoPort {
 
   // Optional utilities (nice to have)
   listRuns?(): ResponseState[];
+  listRunsBySurveyId?(surveyId: ID): ResponseState[];
+  getLatestRunForSurvey?(surveyId: ID): ResponseState | null;
+
   clearAll?(): void;
 }

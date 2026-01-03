@@ -25,15 +25,17 @@
   --surface-strong: rgba(255, 255, 255, 0.78);
 
   /* Buttons */
-  --btn-solid-bg: var(--accent);
-  --btn-solid-fg: #ffffff;
-  --btn-ghost-fg: var(--secondary);
-  --btn-ghost-border: var(--secondary);
+--btn-solid-bg: var(--primary);
+--btn-solid-fg: #ffffff;
+
+--btn-ghost-fg: var(--primary);
+--btn-ghost-border: rgba(94, 58, 122, 0.35);
+
 
   /* Radii */
   --r-sm: 10px;
-  --r-md: 14px;
-  --r-lg: 18px;
+  --r-md: 12px;
+  --r-lg: 8px;
 
   /* Spacing */
   --s-1: 4px;

@@ -1,8 +1,8 @@
+// /src/features/surveyRun/PromptCard.tsx
+
 import { Card } from "@ui/Card";
 import { Stack } from "@ui/Stack";
 import { Text } from "@ui/Text";
-
-
 
 type Props = {
   question: string;
@@ -23,31 +23,76 @@ const LABELS: Record<number, string> = {
 };
 
 export function PromptCard(props: Props) {
-  // We’re matching your screenshot scale (1–7). If you later change scale, this still works,
-  // but labels will only show for 1–7.
   const options: number[] = [];
   for (let n = props.min; n <= props.max; n++) options.push(n);
 
   return (
-    <Card style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-      <Stack gap={10}>
-        <Text style={{ lineHeight: 1.35, fontWeight: 650 }}>{props.question}</Text>
+    <Card
+      style={{
+        background: "rgba(255,255,255,0.55)",
+        border: "1px solid rgba(67, 60, 94, 0.14)",
+        borderRadius: 20,
+        padding: "var(--s-4)",
+        boxShadow: "0 1px 0 rgba(67,60,94,0.06)",
+      }}
+    >
+      <Stack gap={14}>
+        {/* Question */}
+        <Text
+          style={{
+            fontSize: "1.25rem",
+            fontWeight: 800,
+            lineHeight: 1.25,
+            color: "var(--fg)",
+            padding: "0 var(--s-2)",
+          }}
+        >
+          {props.question}
+        </Text>
 
-        <div style={{ height: 1, background: "var(--border)", opacity: 0.7 }} />
+        {/* Divider */}
+        <div
+          style={{
+            height: 1,
+            background: "rgba(67, 60, 94, 0.12)",
+            margin: "0 var(--s-2)",
+          }}
+        />
 
-        <Stack gap={8}>
+        {/* Options */}
+        <Stack gap={10} style={{ padding: "0 var(--s-2)" }}>
           {options.map((n) => {
             const checked = props.value === n;
+
             return (
               <label
                 key={n}
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 10,
+                  gap: 14,
                   cursor: "pointer",
-                  padding: "6px 4px",
+                  userSelect: "none",
+
+                  padding: "12px 14px",
                   borderRadius: "var(--r-md)",
+
+                  background: checked
+                    ? "rgba(94, 58, 122, 0.08)"
+                    : "transparent",
+
+                  transition: "background 120ms ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (!checked) {
+                    e.currentTarget.style.background =
+                      "rgba(94, 58, 122, 0.04)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!checked) {
+                    e.currentTarget.style.background = "transparent";
+                  }
                 }}
               >
                 <input
@@ -56,8 +101,21 @@ export function PromptCard(props: Props) {
                   value={n}
                   checked={checked}
                   onChange={() => props.onPickValue(n)}
+                  style={{
+                    width: 18,
+                    height: 18,
+                    accentColor: "var(--primary)",
+                    cursor: "pointer",
+                  }}
                 />
-                <Text>
+
+                <Text
+                  style={{
+                    fontSize: "1.15rem",
+                    fontWeight: 650,
+                    lineHeight: 1.35,
+                  }}
+                >
                   {n} = {LABELS[n] ?? `Option ${n}`}
                 </Text>
               </label>
