@@ -1,10 +1,15 @@
 // /src/core/data/runRepo.ts
-// [S03] Added: Run repository (persist ResponseState). Does not compute results; stores answers only.
+// [S03 -> S09] Updated: Run repository (persist ResponseState) with per-user localStorage scoping.
+// Goal: each authed user sees ONLY their own runs in localStorage.
+//
+// - Storage key becomes: `${BASE_KEY}__uid_${uid}`
+// - RequireAuth calls runRepo.setActiveUser(uid) once authed
+// - If not set yet, we fall back to an "anon" bucket (should be empty in this no-guest version)
 
 import type { ID, ResponseState } from "../domain/types";
 import { readJson, writeJson, removeKey } from "./storage";
 
-const KEY = "survey_app_runs_v1";
+const BASE_KEY = "survey_app_runs_v1";
 
 type RunStore = {
   byId: Record<ID, ResponseState>;
@@ -19,8 +24,39 @@ function makeRunId(): ID {
   return `r_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+let activeUid: string | null = null;
+
+function keyFor(uid: string | null): string {
+  // No-guest app, but auth state can briefly be loading.
+  // Keep a safe fallback bucket that *should remain empty* in production use.
+  const safe = uid?.trim();
+  if (!safe) return `${BASE_KEY}__uid_anon`;
+  return `${BASE_KEY}__uid_${safe}`;
+}
+
+function readStore(): RunStore {
+  return readJson<RunStore>(keyFor(activeUid), emptyStore());
+}
+
+function writeStore(store: RunStore): void {
+  writeJson(keyFor(activeUid), store);
+}
+
 export const runRepo = {
-  key: KEY,
+  /**
+   * Set/clear the active user scope for run persistence.
+   * Call with uid when authed; call with null when anon/signed out.
+   */
+  setActiveUser(uid: string | null) {
+    activeUid = uid?.trim() ? uid : null;
+  },
+
+  /**
+   * Expose the computed key (mostly for debugging/dev tools).
+   */
+  get key() {
+    return keyFor(activeUid);
+  },
 
   createRun(surveyId: ID): ResponseState {
     const run: ResponseState = {
@@ -29,25 +65,27 @@ export const runRepo = {
       startedAt: Date.now(),
       answers: {},
     };
-    const store = readJson<RunStore>(KEY, emptyStore());
+
+    const store = readStore();
     store.byId[run.runId] = run;
-    writeJson(KEY, store);
+    writeStore(store);
+
     return run;
   },
 
   getRun(runId: ID): ResponseState | null {
-    const store = readJson<RunStore>(KEY, emptyStore());
+    const store = readStore();
     return store.byId[runId] ?? null;
   },
 
   saveRun(run: ResponseState): void {
-    const store = readJson<RunStore>(KEY, emptyStore());
+    const store = readStore();
     store.byId[run.runId] = run;
-    writeJson(KEY, store);
+    writeStore(store);
   },
 
   listRuns(): ResponseState[] {
-    const store = readJson<RunStore>(KEY, emptyStore());
+    const store = readStore();
     return Object.values(store.byId);
   },
 
@@ -66,12 +104,15 @@ export const runRepo = {
   },
 
   remove(runId: ID): void {
-    const store = readJson<RunStore>(KEY, emptyStore());
+    const store = readStore();
     delete store.byId[runId];
-    writeJson(KEY, store);
+    writeStore(store);
   },
 
+  /**
+   * Clears ONLY the current active user's bucket.
+   */
   clearAll(): void {
-    removeKey(KEY);
+    removeKey(keyFor(activeUid));
   },
 };

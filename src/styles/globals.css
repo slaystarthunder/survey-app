@@ -1,25 +1,31 @@
-/* [S04] Added: Global baseline styles. */
-html, body {
-    height: 100%;
-  }
-  
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--fg);
-    font-family: var(--font-sans);
-  }
-  
-  a {
-    color: inherit;
-    opacity: 0.9;
-  }
-  
-  a:hover {
-    opacity: 1;
-  }
-  
-  * {
-    box-sizing: border-box;
-  }
-  
+/* [S05] Updated: Global baseline styles (Comfortaa + warm background). */
+
+@import url("https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&display=swap");
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+  opacity: 0.9;
+}
+
+a:hover {
+  opacity: 1;
+}
+
+* {
+  box-sizing: border-box;
+}

@@ -24,30 +24,29 @@ import { DevDbPage } from "../pages/dev/DevDbPage";
 import { LoginPage } from "../pages/auth/LoginPage";
 import { RequireAuth } from "../infra/auth/RequireAuth";
 
-
 export function AppRoutes() {
   return (
     <Routes>
       {/* ========================= */}
       {/* Public routes */}
       {/* ========================= */}
-
       <Route path="/login" element={<LoginPage />} />
 
-      <Route path="/" element={<HomePage />} />
-
-      <Route path="/needs" element={<NeedsMapPage />} />
-      <Route path="/intro/:surveyId" element={<SurveyIntroPage />} />
-      <Route path="/run/:surveyId" element={<SurveyRunPage />} />
-      <Route path="/result/:runId" element={<ResultPage />} />
-      <Route path="/result/:runId/finished" element={<FinishedPage />} />
-
+      {/* Optional: keep this public for dev/design QA */}
       <Route path="/ui-demo" element={<UiDemoPage />} />
 
       {/* ========================= */}
       {/* Protected routes */}
       {/* ========================= */}
       <Route element={<RequireAuth />}>
+        {/* Core app */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/needs" element={<NeedsMapPage />} />
+        <Route path="/intro/:surveyId" element={<SurveyIntroPage />} />
+        <Route path="/run/:surveyId" element={<SurveyRunPage />} />
+        <Route path="/result/:runId" element={<ResultPage />} />
+        <Route path="/result/:runId/finished" element={<FinishedPage />} />
+
         {/* Admin */}
         <Route path="/admin/surveys" element={<AdminSurveysPage />} />
         <Route path="/admin/surveys/:surveyId" element={<AdminSurveyEditorPage />} />

@@ -8,7 +8,6 @@ import { PageShell } from "@ui/PageShell";
 import { useSurveyRunController } from "@features/surveyRun/useSurveyRunController";
 import { SurveyRunView } from "@features/surveyRun/SurveyRunView";
 
-
 export function SurveyRunPage() {
   const params = useParams();
   const surveyId = params.surveyId ?? "";
@@ -57,10 +56,9 @@ export function SurveyRunPage() {
       isComplete={c.isComplete}
       // Finish
       onFinish={() => {
-        const runId = c.finish(); // marks completedAt + saves
-        navigate(`/result/${runId}`);
+        const runId = c.finish(); // now also triggers cloud save (fallback)
+        if (runId) navigate(`/result/${runId}`);
       }}
-      
     />
   );
 }

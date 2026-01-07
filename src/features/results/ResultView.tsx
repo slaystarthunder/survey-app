@@ -1,5 +1,5 @@
 // /src/features/results/ResultView.tsx
-// Mapping result screen (single scroll page, 3 sections) – styled closer to customer mockups.
+// Result screen (single scroll page, 3 sections) aligned with customer mockups.
 
 import { PageShell } from "@ui/PageShell";
 import { Card } from "@ui/Card";
@@ -20,106 +20,61 @@ type Props = {
 
   onNeedsMap: () => void;
   onReassess: () => void;
-
   onDownload: () => void;
   onSave: () => void;
 };
+
+type StatusLabel = "Emerging" | "Exploring" | "Developing" | "Integrated";
 
 function clamp(n: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, n));
 }
 
-function pct(avg: number | null, scaleMax: number) {
-  if (avg == null) return 0;
-  if (!Number.isFinite(avg) || scaleMax <= 0) return 0;
-  return clamp((avg / scaleMax) * 100, 0, 100);
+function ratioFromAvg(avg: number | null, scaleMax: number) {
+  if (avg == null || !Number.isFinite(avg) || scaleMax <= 0) return 0;
+  return clamp(avg / scaleMax, 0, 1);
 }
 
-function statusLabel(p: number) {
-  if (p >= 85) return "Integrated";
-  if (p >= 65) return "Developing";
-  if (p >= 45) return "Exploring";
-  return "Emerging";
+function statusFromRatio(r: number): StatusLabel {
+  // Tuned to feel “human” rather than “mathy”
+  if (r < 0.25) return "Emerging";
+  if (r < 0.5) return "Exploring";
+  if (r < 0.75) return "Developing";
+  return "Integrated";
 }
 
-function detailFor(label: string) {
-  const key = label.toLowerCase();
-
-  if (key.includes("detached") || key.includes("meta")) {
-    return {
-      title: "Detached awareness / meta-observation",
-      body: [
-        "The ability to step back and observe your thoughts, emotions, body sensations, and impulses without automatically identifying with them.",
-        "Foundation of curiosity about yourself: you can’t explore what’s inside unless you can witness it from a neutral perspective.",
-        "Creates space between stimulus and response — the root of conscious choice.",
-        "Impact: reduces autopilot living, shame spirals, and impulsive decisions.",
-      ],
-    };
-  }
-
-  if (key.includes("dopamine") || key.includes("reward") || key.includes("motivation")) {
-    return {
-      title: "Dopamine awareness / reward & motivation tracking",
-      body: [
-        "Conscious tracking of what triggers quick dopamine hits (novelty, achievement, approval, pleasure) and what causes avoidance or flatness.",
-        "Helps separate authentic wants from craving-driven habits or compulsions.",
-        "Supports value-aligned motivation by revealing what your system is actually chasing.",
-        "Impact: breaks compulsive loops and helps rewire habits toward what’s meaningful.",
-      ],
-    };
-  }
-
-  if (key.includes("flow") || key.includes("absorbed") || key.includes("engagement")) {
-    return {
-      title: "Absorbed engagement / flow",
-      body: [
-        "Moments of complete immersion where self-consciousness drops and you’re fully present in action or creation.",
-        "Often feels effortless and deeply satisfying when challenge matches skill.",
-        "A peak state of authenticity — less overthinking, more direct participation.",
-        "Impact: improves focus, learning, craft, and a sense of meaning-through-doing.",
-      ],
-    };
-  }
-
-  if (key.includes("transcend") || key.includes("spiritual") || key.includes("connection")) {
-    return {
-      title: "Transcendence / spiritual connection",
-      body: [
-        "A sense of unity with something larger (nature, humanity, the universe, the divine).",
-        "Can dissolve ego boundaries and reveal interconnectedness.",
-        "Often brings awe, peace, and purpose beyond personal concerns.",
-        "Impact: supports long-term meaning, perspective, and resilience.",
-      ],
-    };
-  }
-
-  return {
-    title: label,
-    body: [
-      "Details for this category will be added later.",
-      "For now, use the bar above as a quick snapshot of where attention might help.",
-    ],
-  };
+function overallStatus(rows: Row[], scaleMax: number): StatusLabel {
+  const vals = rows.map((r) => r.avg).filter((v): v is number => typeof v === "number");
+  if (vals.length === 0) return "Emerging";
+  const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+  return statusFromRatio(ratioFromAvg(avg, scaleMax));
 }
 
-function SegmentedBar({ valuePct }: { valuePct: number }) {
-  const segments = 10;
-  const filled = Math.round((valuePct / 100) * segments);
+function SegmentedBar({ ratio }: { ratio: number }) {
+  const total = 10;
+  const filled = Math.round(clamp(ratio, 0, 1) * total);
 
   return (
-    <div style={{ display: "flex", gap: 3 }}>
-      {Array.from({ length: segments }).map((_, i) => {
+    <div
+      aria-hidden
+      style={{
+        display: "grid",
+        gridTemplateColumns: `repeat(${total}, 1fr)`,
+        gap: 3,
+        width: "100%",
+        maxWidth: 260,
+      }}
+    >
+      {Array.from({ length: total }).map((_, i) => {
         const on = i < filled;
-
         return (
           <div
             key={i}
             style={{
-              width: 18, // more square cells
-              height: 18, // square cells
-              borderRadius: 1, // almost no rounding
-              background: on ? "#4F8F7A" : "transparent",
-              border: on ? "1px solid transparent" : "1.5px solid rgba(0,0,0,0.18)",
+              height: 16,
+              borderRadius: 2, // “almost square” like mock
+              background: on ? "rgba(94, 132, 86, 0.95)" : "rgba(67, 60, 94, 0.18)",
+              border: "1px solid rgba(67, 60, 94, 0.14)",
             }}
           />
         );
@@ -128,163 +83,270 @@ function SegmentedBar({ valuePct }: { valuePct: number }) {
   );
 }
 
-export function ResultView({
-  rows,
-  scaleMax,
-  surveyTitle = "Presence & Awareness",
-  onNeedsMap,
-  onReassess,
-  onDownload,
-  onSave,
-}: Props) {
+function iconForLabel(label: string) {
+  const s = label.toLowerCase();
+  if (s.includes("meta") || s.includes("observe") || s.includes("awareness")) return "👁️";
+  if (s.includes("dopamine") || s.includes("reward") || s.includes("motivation")) return "🧠";
+  if (s.includes("flow") || s.includes("engagement")) return "⚡";
+  if (s.includes("spiritual") || s.includes("transcend")) return "✨";
+  return "•";
+}
+
+function explainerForLabel(label: string) {
+  const s = label.toLowerCase();
+
+  if (s.includes("meta") || s.includes("detached") || s.includes("observe")) {
+    return {
+      title: "Meta-observation",
+      subtitle: "Detached awareness",
+      body:
+        "The ability to step back and notice thoughts, emotions, and impulses without automatically identifying with them. " +
+        "This creates the space needed for curiosity and non-reactive choice.",
+      impact:
+        "Reduces automatic reactivity, strengthens response freedom, and supports self-understanding.",
+    };
+  }
+
+  if (s.includes("dopamine") || s.includes("reward") || s.includes("motivation")) {
+    return {
+      title: "Dopamine awareness",
+      subtitle: "Reward & motivation tracking",
+      body:
+        "Conscious tracking of what triggers reward-seeking (novelty, achievement, approval, pleasure) and what creates avoidance or flatness. " +
+        "Helps separate authentic wants from craving loops.",
+      impact:
+        "Supports habit change, reduces compulsive cycles, and aligns motivation with values.",
+    };
+  }
+
+  if (s.includes("flow") || s.includes("absorbed") || s.includes("engagement")) {
+    return {
+      title: "Absorbed engagement",
+      subtitle: "Flow",
+      body:
+        "Moments of complete immersion where self-consciousness decreases and action feels natural. " +
+        "Often a signal of presence, ease, and meaningful engagement.",
+      impact:
+        "Strengthens satisfaction and momentum through aligned, effortless action.",
+    };
+  }
+
+  if (s.includes("spiritual") || s.includes("transcend") || s.includes("connection")) {
+    return {
+      title: "Spiritual connection",
+      subtitle: "Transcendence",
+      body:
+        "Experiencing a sense of connection to something larger (nature, humanity, the divine, meaning). " +
+        "Can soften ego boundaries and reveal interconnectedness.",
+      impact:
+        "Brings peace, awe, and purpose — especially during uncertainty or transition.",
+    };
+  }
+
+  // fallback (safe + non-diagnostic)
+  return {
+    title: label,
+    subtitle: "Reflection",
+    body:
+      "This category represents one aspect of your subjective experience in the assessment. " +
+      "Use it as a gentle pointer for curiosity — not as a judgment or diagnosis.",
+    impact:
+      "If this area feels important, consider revisiting it with specific examples from your recent life.",
+  };
+}
+
+export function ResultView({ rows, scaleMax, surveyTitle, onNeedsMap, onReassess, onDownload, onSave }: Props) {
+  const overall = overallStatus(rows, scaleMax);
+
   return (
-    <PageShell>
-      <div style={{ maxWidth: 560, margin: "0 auto", padding: "14px 0 28px" }}>
-        <Stack gap={16}>
-          {/* SECTION A — Mapping summary */}
-          <Card
-            style={{
-              borderRadius: 22,
-              background: "rgba(255,255,255,0.35)",
-            }}
-          >
-            <Stack gap={14}>
-              <Heading level={2}>Your mapping</Heading>
-
-              <Stack gap={12}>
-                {rows.map((r) => {
-                  const p = pct(r.avg, scaleMax);
-
-                  return (
-                    <div key={r.categoryId} style={{ display: "grid", gap: 6 }}>
-                      <Stack direction="row" justify="space-between" style={{ gap: 12 }}>
-                        <Text style={{ fontWeight: 650 }}>{r.label}</Text>
-                        <Text muted style={{ fontSize: 12 }}>
-                          {statusLabel(p)}
-                        </Text>
-                      </Stack>
-
-                      {/* Removed the % column; bar only */}
-                      <SegmentedBar valuePct={p} />
-                    </div>
-                  );
-                })}
-              </Stack>
-
-              {/* Move Needs Map + Reassess BELOW the bars (like mock) */}
-              <Stack direction="row" gap={10} wrap="wrap" style={{ marginTop: 6 }}>
-                <Button
-                  variant="ghost"
-                  onClick={onNeedsMap}
-                  style={{
-                    padding: "10px 14px",
-                    borderRadius: 12,
-                    border: "1px solid var(--border)",
-                    background: "var(--surface)",
-                  }}
-                >
-                  Needs Map
-                </Button>
-
-                <Button
-                  onClick={onReassess}
-                  style={{
-                    padding: "10px 14px",
-                    borderRadius: 12,
-                    border: "1px solid transparent",
-                    background: "var(--primary)",
-                    color: "#ffffff",
-                  }}
-                >
-                  Reassess
-                </Button>
-              </Stack>
-
-              {/* Keep Download/Save as-is for now */}
-              <Stack direction="row" gap={10} wrap="wrap" style={{ marginTop: 2 }}>
-                <Button
-                  variant="ghost"
-                  onClick={onDownload}
-                  style={{
-                    padding: "10px 14px",
-                    borderRadius: 12,
-                    border: "1px solid var(--border)",
-                    background: "var(--surface)",
-                  }}
-                >
-                  Download
-                </Button>
-
-                <Button
-                  onClick={onSave}
-                  style={{
-                    padding: "10px 14px",
-                    borderRadius: 12,
-                    border: "1px solid transparent",
-                    background: "var(--accent)",
-                    color: "#ffffff",
-                  }}
-                >
-                  Save
-                </Button>
-              </Stack>
-
-              <Text muted style={{ fontSize: 12, lineHeight: 1.5 }}>
-                Saving your results enables you to test more universal needs to understand where you are, and what you
-                might want to focus on improving.
-              </Text>
-            </Stack>
-          </Card>
-
-          {/* SECTION B — Understand */}
-          <Card>
-            <Stack gap={10}>
-              <Heading level={2}>Understand your result</Heading>
-
-              <Text muted style={{ lineHeight: 1.55 }}>
-                This is your subjective perception of how present & aware you currently are across these perspectives —
-                it serves as a map that enables you to understand what might need your attention.
+    <PageShell maxWidth={480}>
+      <Stack gap={16} style={{ paddingBottom: "var(--s-6)" }}>
+        {/* ========================= */}
+        {/* Section 1: Your mapping */}
+        {/* ========================= */}
+        <Card
+          style={{
+            padding: "var(--s-5)",
+            background: "rgba(255,255,255,0.35)",
+            borderRadius: 22,
+            border: "1px solid rgba(67, 60, 94, 0.22)",
+          }}
+        >
+          <Stack gap={14}>
+            <Stack gap={8}>
+              <Text
+                style={{
+                  fontWeight: 700,
+                  letterSpacing: 0.2,
+                  color: "rgba(94, 132, 86, 0.95)", // muted green like mock status
+                }}
+              >
+                {overall}
               </Text>
 
-              <div style={{ height: 1, background: "var(--border)", opacity: 0.7 }} />
+              <Stack gap={8}>
+                <Heading level={2} style={{ margin: 0 }}>
+                  {surveyTitle ?? "Your Mapping"}
+                </Heading>
 
-              <Stack gap={6}>
-                <Text style={{ fontWeight: 750 }}>{surveyTitle}</Text>
-                <Text style={{ lineHeight: 1.55 }}>
-                  The foundational capacity to be consciously present with your inner experience in the moment —
-                  including thoughts, emotions, sensations, and impulses — with clarity and openness.
-                </Text>
-
-                <Text muted style={{ fontSize: 12, lineHeight: 1.55 }}>
-                  Impact: reduces automatic reactivity, fosters freedom of response, and enables access to higher states
-                  of flow and transcendence.
-                </Text>
+                <div
+                  style={{
+                    height: 3,
+                    width: 180,
+                    background: "rgba(67, 60, 94, 0.65)",
+                    borderRadius: 999,
+                  }}
+                />
               </Stack>
             </Stack>
-          </Card>
 
-          {/* SECTION C — Detail cards */}
-          <Stack gap={12}>
-            {rows.map((r) => {
-              const info = detailFor(r.label);
-              return (
-                <Card key={r.categoryId}>
-                  <Stack gap={10}>
-                    <Heading level={3}>{info.title}</Heading>
-                    <Stack gap={8}>
-                      {info.body.map((t, i) => (
-                        <Text key={i} style={{ lineHeight: 1.55 }}>
-                          {t}
-                        </Text>
-                      ))}
+            {/* Category rows */}
+            <Stack gap={12} style={{ marginTop: 4 }}>
+              {rows.map((r) => {
+                const ratio = ratioFromAvg(r.avg, scaleMax);
+                const status = statusFromRatio(ratio);
+
+                return (
+                  <div
+                    key={r.categoryId}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr auto",
+                      gap: 10,
+                      alignItems: "center",
+                    }}
+                  >
+                    <Stack gap={6}>
+                      <Text style={{ fontWeight: 650 }}>
+                        <span aria-hidden style={{ marginRight: 8 }}>
+                          {iconForLabel(r.label)}
+                        </span>
+                        {r.label}
+                      </Text>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <SegmentedBar ratio={ratio} />
+                        <div
+                          style={{
+                            width: 90,
+                            textAlign: "right",
+                            fontWeight: 700,
+                            color:
+                              status === "Integrated"
+                                ? "rgba(94, 132, 86, 0.95)"
+                                : status === "Developing"
+                                ? "rgba(116, 144, 82, 0.95)"
+                                : status === "Exploring"
+                                ? "rgba(109, 151, 141, 0.95)"
+                                : "rgba(130, 130, 130, 0.9)",
+                          }}
+                        >
+                          {status}
+                        </div>
+                      </div>
                     </Stack>
-                  </Stack>
-                </Card>
-              );
-            })}
+                  </div>
+                );
+              })}
+            </Stack>
+
+            {/* Primary actions */}
+            <Stack direction="row" gap={12} style={{ marginTop: 10 }}>
+              <Button
+                onClick={onNeedsMap}
+                variant="ghost"
+                style={{
+                  flex: 1,
+                  borderRadius: 12,
+                  padding: "12px 14px",
+                  border: "2px solid rgba(67, 60, 94, 0.55)",
+                  fontWeight: 700,
+                }}
+              >
+                Needs Map
+              </Button>
+
+              <Button
+                onClick={onReassess}
+                style={{
+                  flex: 1,
+                  borderRadius: 12,
+                  padding: "12px 14px",
+                  background: "rgba(67, 60, 94, 0.92)",
+                  color: "#fff",
+                  border: "2px solid rgba(67, 60, 94, 0.15)",
+                  fontWeight: 750,
+                }}
+              >
+                Reassess
+              </Button>
+            </Stack>
           </Stack>
+        </Card>
+
+        {/* ========================= */}
+        {/* Section 2: Understand your result */}
+        {/* ========================= */}
+        <Card
+          style={{
+            padding: "var(--s-5)",
+            background: "rgba(255,255,255,0.35)",
+            borderRadius: 22,
+            border: "1px solid rgba(67, 60, 94, 0.22)",
+          }}
+        >
+          <Stack gap={12}>
+            <Heading level={2} style={{ margin: 0 }}>
+              Understand your result
+            </Heading>
+
+            <Text style={{ lineHeight: 1.6 }}>
+              This mapping reflects your <b>subjective self-perception</b> in the moment. It’s a gentle tool for
+              noticing patterns and deciding where to place attention — <b>not</b> a clinical or diagnostic assessment.
+            </Text>
+          </Stack>
+        </Card>
+
+        {/* ========================= */}
+        {/* Section 3: Detailed category explanations */}
+        {/* ========================= */}
+        <Stack gap={12}>
+          {rows.map((r) => {
+            const e = explainerForLabel(r.label);
+            return (
+              <Card
+                key={`explain-${r.categoryId}`}
+                style={{
+                  padding: "var(--s-5)",
+                  background: "rgba(255,255,255,0.35)",
+                  borderRadius: 22,
+                  border: "1px solid rgba(67, 60, 94, 0.22)",
+                }}
+              >
+                <Stack gap={10}>
+                  <Stack gap={2}>
+                    <Text style={{ fontWeight: 800, fontSize: 16 }}>
+                      <span aria-hidden style={{ marginRight: 8 }}>
+                        {iconForLabel(r.label)}
+                      </span>
+                      {e.title}
+                    </Text>
+                    <Text muted style={{ fontWeight: 650 }}>
+                      {e.subtitle}
+                    </Text>
+                  </Stack>
+
+                  <Text style={{ lineHeight: 1.65 }}>{e.body}</Text>
+
+                  <Text style={{ lineHeight: 1.65 }}>
+                    <b style={{ color: "rgba(214, 112, 84, 0.95)" }}>Impact:</b> {e.impact}
+                  </Text>
+                </Stack>
+              </Card>
+            );
+          })}
         </Stack>
-      </div>
+      </Stack>
     </PageShell>
   );
 }
