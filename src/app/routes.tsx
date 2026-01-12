@@ -24,6 +24,9 @@ import { DevDbPage } from "../pages/dev/DevDbPage";
 import { LoginPage } from "../pages/auth/LoginPage";
 import { RequireAuth } from "../infra/auth/RequireAuth";
 
+import { CompassPage } from "../pages/compass/CompassPage";
+
+
 export function AppRoutes() {
   return (
     <Routes>
@@ -42,6 +45,7 @@ export function AppRoutes() {
         {/* Core app */}
         <Route path="/" element={<HomePage />} />
         <Route path="/needs" element={<NeedsMapPage />} />
+        <Route path="/compass" element={<CompassPage />} />
         <Route path="/intro/:surveyId" element={<SurveyIntroPage />} />
         <Route path="/run/:surveyId" element={<SurveyRunPage />} />
         <Route path="/result/:runId" element={<ResultPage />} />
