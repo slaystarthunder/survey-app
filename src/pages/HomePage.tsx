@@ -1,6 +1,7 @@
 // /src/pages/HomePage.tsx
 // FINAL – visual polish aligned with mockup (smaller text + dotted leaders)
 // Segmented bar visually aligned with Compass page
+// Emoji icons mapped per survey
 
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -32,8 +33,48 @@ function clamp(n: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, n));
 }
 
-function getIconForSurveyId(id: string) {
-  if (id.includes("presence")) return "🖼️";
+/**
+ * Emoji icon mapping (crisp, no assets).
+ * We prefer surveyId matching (stable), then fall back to title keywords.
+ */
+function getIconForSurvey(surveyId: string, title: string) {
+  const id = surveyId.toLowerCase();
+  const t = title.toLowerCase();
+
+  // Presence & Awareness
+  if (id.includes("presence") || t.includes("presence")) return "🖼️";
+
+  // Purpose & Meaning
+  if (id.includes("purpose") || t.includes("purpose") || t.includes("meaning")) return "🌱";
+
+  // Health & Vitality
+  if (id.includes("health") || t.includes("health") || t.includes("vitality")) return "💪";
+
+  // Autonomy & Freedom
+  if (id.includes("autonomy") || t.includes("autonomy") || t.includes("freedom")) return "🗽";
+
+  // Safety & Security
+  if (id.includes("safety") || t.includes("safety") || t.includes("security")) return "🛡️";
+
+  // Social Connection
+  if (id.includes("social") || t.includes("social") || t.includes("connection")) return "👥";
+
+  // Identity & Esteem
+  if (id.includes("identity") || t.includes("identity") || t.includes("esteem")) return "💎";
+
+  // Rest & Recovery
+  if (id.includes("rest") || t.includes("rest") || t.includes("recovery")) return "😴";
+
+  // Cognitive & Intellectual Fulfillment
+  if (
+    id.includes("cognitive") ||
+    t.includes("cognitive") ||
+    t.includes("intellectual") ||
+    t.includes("fulfillment")
+  )
+    return "🧠";
+
+  // Fallback for unknown
   return "⏱️";
 }
 
@@ -181,7 +222,7 @@ export function HomePage() {
                   >
                     {/* Row header */}
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span>{getIconForSurveyId(r.surveyId)}</span>
+                      <span>{getIconForSurvey(r.surveyId, r.title)}</span>
 
                       <Text style={{ fontSize: 15, fontWeight: 600 }}>{r.title}</Text>
 
@@ -205,7 +246,7 @@ export function HomePage() {
                             style={{
                               background: "#5B3A78",
                               padding: "8px 22px",
-                              borderRadius: 999,
+                              borderRadius: 12,
                               fontSize: 13,
                               fontWeight: 600,
                             }}
@@ -240,7 +281,7 @@ export function HomePage() {
               style={{
                 marginTop: 12,
                 background: "#4E4964",
-                borderRadius: 18,
+                borderRadius: 12,
                 padding: "14px",
                 fontWeight: 700,
               }}

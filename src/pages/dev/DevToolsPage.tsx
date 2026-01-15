@@ -48,33 +48,6 @@ export function DevToolsPage() {
           Seed + Save Presence & Awareness to Firestore
         </Button>
 
-        {/* ✅ NEW: Export local code snapshot (served by Vite dev server plugin) */}
-        <Button
-          onClick={async () => {
-            try {
-              const res = await fetch("/__dev/snapshot");
-              if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-              const jsonText = await res.text(); // keep exact payload
-              const blob = new Blob([jsonText], { type: "application/json" });
-              const url = URL.createObjectURL(blob);
-
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = `code-snapshot-${Date.now()}.json`;
-              a.click();
-
-              URL.revokeObjectURL(url);
-
-              alert("Exported code snapshot ✅");
-            } catch (e) {
-              alert(`Export failed: ${e instanceof Error ? e.message : String(e)}`);
-            }
-          }}
-        >
-          Export code snapshot (JSON)
-        </Button>
-
         <Button
           onClick={async () => {
             try {
