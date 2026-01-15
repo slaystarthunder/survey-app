@@ -7,10 +7,7 @@ import { Button } from "@ui/Button";
 import { seedPerspectiveCircleSurvey } from "@core/seed/seedPerspectiveCircle";
 import { surveyRepoFirebase } from "@infra/firebase/repos/surveyRepoFirebase";
 
-
 import { seedMockupSurveyHeadlinesToFirebase } from "@core/seed/seedMockupSurveyHeadlinesToFirebase";
-
-
 
 export function DevToolsPage() {
   return (
@@ -34,24 +31,48 @@ export function DevToolsPage() {
           Seed Presence & Awareness survey (local)
         </Button>
 
-        {/* ✅ NEW */}
         <Button
           onClick={async () => {
             try {
-              const survey = seedPerspectiveCircleSurvey(); // now returns blueprint
+              const survey = seedPerspectiveCircleSurvey(); // returns blueprint
               await surveyRepoFirebase.save(survey);
               const all = await surveyRepoFirebase.list();
               alert(`Saved to Firestore ✅ Surveys in Firestore: ${all.length}`);
             } catch (e) {
-              alert(`Firestore save failed: ${e instanceof Error ? e.message : String(e)}`);
+              alert(
+                `Firestore save failed: ${e instanceof Error ? e.message : String(e)}`
+              );
             }
           }}
         >
           Seed + Save Presence & Awareness to Firestore
         </Button>
 
-        <Button variant="ghost" onClick={() => (window.location.href = "/")}>
-          Back to app
+        {/* ✅ NEW: Export local code snapshot (served by Vite dev server plugin) */}
+        <Button
+          onClick={async () => {
+            try {
+              const res = await fetch("/__dev/snapshot");
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+              const jsonText = await res.text(); // keep exact payload
+              const blob = new Blob([jsonText], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `code-snapshot-${Date.now()}.json`;
+              a.click();
+
+              URL.revokeObjectURL(url);
+
+              alert("Exported code snapshot ✅");
+            } catch (e) {
+              alert(`Export failed: ${e instanceof Error ? e.message : String(e)}`);
+            }
+          }}
+        >
+          Export code snapshot (JSON)
         </Button>
 
         <Button
@@ -67,7 +88,9 @@ export function DevToolsPage() {
           Seed mockup survey headlines (Firestore)
         </Button>
 
-
+        <Button variant="ghost" onClick={() => (window.location.href = "/")}>
+          Back to app
+        </Button>
       </div>
     </PageShell>
   );

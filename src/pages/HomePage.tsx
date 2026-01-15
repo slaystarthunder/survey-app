@@ -1,5 +1,6 @@
 // /src/pages/HomePage.tsx
 // FINAL – visual polish aligned with mockup (smaller text + dotted leaders)
+// Segmented bar visually aligned with Compass page
 
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -43,23 +44,37 @@ function pctToLabel(p: number) {
   return "Emerging";
 }
 
+/* ---------- Compass-style segmented bar ---------- */
+
 function SegmentedBar({ ratio }: { ratio: number }) {
   const total = 10;
   const filled = Math.round(clamp(ratio, 0, 1) * total);
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: `repeat(${total}, 1fr)`, gap: 6 }}>
-      {Array.from({ length: total }).map((_, i) => (
-        <div
-          key={i}
-          style={{
-            height: 10,
-            borderRadius: 6,
-            border: "1px solid var(--border)",
-            background: i < filled ? "#4F8F7A" : "transparent",
-          }}
-        />
-      ))}
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: `repeat(${total}, 1fr)`,
+        gap: 3,
+        maxWidth: 220,
+      }}
+    >
+      {Array.from({ length: total }).map((_, i) => {
+        const on = i < filled;
+        return (
+          <div
+            key={i}
+            style={{
+              height: 16,
+              borderRadius: 2,
+              background: on
+                ? "rgba(94, 132, 86, 0.95)"
+                : "rgba(67, 60, 94, 0.18)",
+              border: "1px solid rgba(67, 60, 94, 0.14)",
+            }}
+          />
+        );
+      })}
     </div>
   );
 }
