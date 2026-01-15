@@ -1,6 +1,6 @@
 // [S08] Added: Route-level orchestration for survey editor.
 
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 import { PageShell } from "@ui/PageShell";
 import { Heading, Text } from "@ui/Text";
@@ -8,10 +8,8 @@ import { Heading, Text } from "@ui/Text";
 import { useSurveyEditorController } from "@features/admin/editor/useSurveyEditorController";
 import { SurveyEditorView } from "@features/admin/editor/SurveyEditorView";
 
-
 export function AdminSurveyEditorPage() {
   const { surveyId = "" } = useParams();
-  const nav = useNavigate();
   const c = useSurveyEditorController(surveyId);
 
   if (c.status === "loading") {
@@ -49,33 +47,39 @@ export function AdminSurveyEditorPage() {
       onChangeTitle={(v) => c.update((x) => ({ ...x, title: v }))}
       onChangeDescription={(v) => c.update((x) => ({ ...x, description: v }))}
       onAddCategory={() =>
-        c.update((x) => {
-          const nextId = `c_${x.categories.length + 1}`;
-          return { ...x, categories: [...x.categories, { categoryId: nextId, label: `Category ${x.categories.length + 1}` }] };
-        })
+        c.update((x) => ({
+          ...x,
+          categories: [
+            ...x.categories,
+            { categoryId: `c_${Date.now().toString(36)}`, label: "New category" },
+          ],
+        }))
       }
       onEditCategoryLabel={(categoryId, v) =>
         c.update((x) => ({
           ...x,
-          categories: x.categories.map((c) => (c.categoryId === categoryId ? { ...c, label: v } : c)),
+          categories: x.categories.map((cat) => (cat.categoryId === categoryId ? { ...cat, label: v } : cat)),
         }))
       }
       onRemoveCategory={(categoryId) =>
         c.update((x) => ({
           ...x,
-          categories: x.categories.filter((c) => c.categoryId !== categoryId),
-          prompts: x.prompts.filter((p) => p.categoryId !== categoryId), // v1 rule: remove prompts in removed category
+          categories: x.categories.filter((cat) => cat.categoryId !== categoryId),
+          prompts: x.prompts.filter((p) => p.categoryId !== categoryId),
         }))
       }
       onAddPrompt={() =>
         c.update((x) => {
-          const cat = x.categories[0];
-          const nextId = `p_${x.prompts.length + 1}`;
+          const firstCat = x.categories[0]?.categoryId ?? "c_default";
           return {
             ...x,
             prompts: [
               ...x.prompts,
-              { promptId: nextId, categoryId: cat?.categoryId ?? "c_1", text: "New prompt" },
+              {
+                promptId: `p_${Date.now().toString(36)}`,
+                categoryId: firstCat,
+                text: "New prompt",
+              },
             ],
           };
         })
@@ -93,7 +97,10 @@ export function AdminSurveyEditorPage() {
         }))
       }
       onRemovePrompt={(promptId) =>
-        c.update((x) => ({ ...x, prompts: x.prompts.filter((p) => p.promptId !== promptId) }))
+        c.update((x) => ({
+          ...x,
+          prompts: x.prompts.filter((p) => p.promptId !== promptId),
+        }))
       }
       onSave={() => c.save()}
     />

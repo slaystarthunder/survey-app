@@ -20,8 +20,6 @@ type Props = {
 
   onNeedsMap: () => void;
   onReassess: () => void;
-  onDownload: () => void;
-  onSave: () => void;
 };
 
 type StatusLabel = "Emerging" | "Exploring" | "Developing" | "Integrated";
@@ -102,8 +100,7 @@ function explainerForLabel(label: string) {
       body:
         "The ability to step back and notice thoughts, emotions, and impulses without automatically identifying with them. " +
         "This creates the space needed for curiosity and non-reactive choice.",
-      impact:
-        "Reduces automatic reactivity, strengthens response freedom, and supports self-understanding.",
+      impact: "Reduces automatic reactivity, strengthens response freedom, and supports self-understanding.",
     };
   }
 
@@ -114,8 +111,7 @@ function explainerForLabel(label: string) {
       body:
         "Conscious tracking of what triggers reward-seeking (novelty, achievement, approval, pleasure) and what creates avoidance or flatness. " +
         "Helps separate authentic wants from craving loops.",
-      impact:
-        "Supports habit change, reduces compulsive cycles, and aligns motivation with values.",
+      impact: "Supports habit change, reduces compulsive cycles, and aligns motivation with values.",
     };
   }
 
@@ -126,8 +122,7 @@ function explainerForLabel(label: string) {
       body:
         "Moments of complete immersion where self-consciousness decreases and action feels natural. " +
         "Often a signal of presence, ease, and meaningful engagement.",
-      impact:
-        "Strengthens satisfaction and momentum through aligned, effortless action.",
+      impact: "Strengthens satisfaction and momentum through aligned, effortless action.",
     };
   }
 
@@ -138,8 +133,7 @@ function explainerForLabel(label: string) {
       body:
         "Experiencing a sense of connection to something larger (nature, humanity, the divine, meaning). " +
         "Can soften ego boundaries and reveal interconnectedness.",
-      impact:
-        "Brings peace, awe, and purpose — especially during uncertainty or transition.",
+      impact: "Brings peace, awe, and purpose — especially during uncertainty or transition.",
     };
   }
 
@@ -150,12 +144,11 @@ function explainerForLabel(label: string) {
     body:
       "This category represents one aspect of your subjective experience in the assessment. " +
       "Use it as a gentle pointer for curiosity — not as a judgment or diagnosis.",
-    impact:
-      "If this area feels important, consider revisiting it with specific examples from your recent life.",
+    impact: "If this area feels important, consider revisiting it with specific examples from your recent life.",
   };
 }
 
-export function ResultView({ rows, scaleMax, surveyTitle, onNeedsMap, onReassess, onDownload, onSave }: Props) {
+export function ResultView({ rows, scaleMax, surveyTitle, onNeedsMap, onReassess }: Props) {
   const overall = overallStatus(rows, scaleMax);
 
   return (

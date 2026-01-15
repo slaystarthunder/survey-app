@@ -1,10 +1,7 @@
 // /src/pages/HomePage.tsx
-// [S10] Updated: HomePage with “completed/in-progress” row UI (Section 6).
-// - Real survey shows progress/status instead of Explore button when a run exists.
-// - Title + progress bar are clickable.
-// - Placeholder surveys remain visible for UI polish.
+// FINAL – visual polish aligned with mockup (smaller text + dotted leaders)
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { PageShell } from "@ui/PageShell";
@@ -13,35 +10,37 @@ import { Stack } from "@ui/Stack";
 import { Heading, Text } from "@ui/Text";
 import { Button } from "@ui/Button";
 
-import { surveyRepo } from "@core/data/surveyRepo";
+import { surveyRepoFirebase } from "@infra/firebase/repos/surveyRepoFirebase";
 import { runRepo } from "@core/data/runRepo";
-import type { ID, ResponseState } from "@core/domain/types";
+import type { ID, ResponseState, SurveyBlueprint } from "@core/domain/types";
+import { computeSummary } from "@core/domain/computeSummary";
 
 type Row = {
   surveyId: ID;
   title: string;
   latestRunId: ID | null;
   run: ResponseState | null;
-  totalCount: number;
-  answeredCount: number;
+  survey: SurveyBlueprint;
 };
+
+const ACTIVE_SURVEY_ID: ID = "s_presence_awareness_v1";
+
+/* ---------- helpers ---------- */
 
 function clamp(n: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, n));
 }
 
-function getIconForSurveyId(surveyId: string) {
-  if (surveyId.includes("presence")) return "🖼️";
-  return "🧭";
+function getIconForSurveyId(id: string) {
+  if (id.includes("presence")) return "🖼️";
+  return "⏱️";
 }
 
-function statusFromProgress(answered: number, total: number) {
-  if (total <= 0) return "Emerging";
-  const r = answered / total;
-  if (r < 0.25) return "Emerging";
-  if (r < 0.5) return "Exploring";
-  if (r < 0.75) return "Developing";
-  return "Integrated";
+function pctToLabel(p: number) {
+  if (p >= 85) return "Integrated";
+  if (p >= 65) return "Developing";
+  if (p >= 45) return "Exploring";
+  return "Emerging";
 }
 
 function SegmentedBar({ ratio }: { ratio: number }) {
@@ -49,206 +48,170 @@ function SegmentedBar({ ratio }: { ratio: number }) {
   const filled = Math.round(clamp(ratio, 0, 1) * total);
 
   return (
-    <div
-      aria-hidden
-      style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${total}, 1fr)`,
-        gap: 3,
-        width: 170,
-        maxWidth: "100%",
-      }}
-    >
-      {Array.from({ length: total }).map((_, i) => {
-        const on = i < filled;
-        return (
-          <div
-            key={i}
-            style={{
-              height: 14,
-              borderRadius: 2,
-              background: on ? "rgba(128, 150, 80, 0.95)" : "rgba(67, 60, 94, 0.12)",
-              border: "1px solid rgba(67, 60, 94, 0.10)",
-            }}
-          />
-        );
-      })}
+    <div style={{ display: "grid", gridTemplateColumns: `repeat(${total}, 1fr)`, gap: 6 }}>
+      {Array.from({ length: total }).map((_, i) => (
+        <div
+          key={i}
+          style={{
+            height: 10,
+            borderRadius: 6,
+            border: "1px solid var(--border)",
+            background: i < filled ? "#4F8F7A" : "transparent",
+          }}
+        />
+      ))}
     </div>
   );
 }
 
+function computeScorePct(survey: SurveyBlueprint, run: ResponseState): number {
+  const summary = computeSummary(survey, run.answers ?? {});
+  if (summary.overallAvg == null) return 0;
+
+  const min = survey.scale?.min ?? 1;
+  const max = survey.scale?.max ?? 7;
+  return Math.round(clamp((summary.overallAvg - min) / (max - min), 0, 1) * 100);
+}
+
+/* ---------- page ---------- */
+
 export function HomePage() {
   const nav = useNavigate();
 
-  const rows = useMemo<Row[]>(() => {
-    const surveys = surveyRepo.list();
+  const [surveys, setSurveys] = useState<SurveyBlueprint[]>([]);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await surveyRepoFirebase.list();
+        if (cancelled) return;
+
+        // Presence first – always
+        list.sort((a, b) =>
+          a.surveyId === ACTIVE_SURVEY_ID ? -1 : b.surveyId === ACTIVE_SURVEY_ID ? 1 : 0
+        );
+
+        setSurveys(list);
+        setStatus("ready");
+      } catch {
+        setStatus("error");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const rows = useMemo<Row[]>(() => {
     return surveys.map((s) => {
       const latest = runRepo.getLatestRunForSurvey(s.surveyId);
-      const run = latest ? runRepo.getRun(latest.runId) : null;
-
-      const totalCount = s.prompts?.length ?? 0;
-
-      let answeredCount = 0;
-      if (run && s.prompts) {
-        for (const p of s.prompts) {
-          if (typeof run.answers?.[p.promptId] === "number") answeredCount += 1;
-        }
-      }
-
       return {
         surveyId: s.surveyId,
         title: s.title,
         latestRunId: latest?.runId ?? null,
-        run,
-        totalCount,
-        answeredCount,
+        run: latest ? runRepo.getRun(latest.runId) : null,
+        survey: s,
       };
     });
-  }, []);
+  }, [surveys]);
 
-  const goToSurvey = (surveyId: ID, run: ResponseState | null, latestRunId: ID | null) => {
-    if (!latestRunId || !run) {
-      nav(`/intro/${surveyId}`);
-      return;
-    }
+  const hasCompletedAny = rows.some((r) => r.run?.completedAt);
 
-    if (run.completedAt) {
-      nav(`/result/${latestRunId}`);
-      return;
-    }
+  const isAvailable = (r: Row) =>
+    r.surveyId === ACTIVE_SURVEY_ID && (r.survey.prompts?.length ?? 0) > 0;
 
-    // in-progress: resume run flow
-    nav(`/run/${surveyId}`);
+  const comingSoon = () => alert("Evaluation not live yet. Coming soon.");
+
+  const openSurvey = (r: Row) => {
+    if (!isAvailable(r)) return comingSoon();
+    if (r.run?.completedAt && r.latestRunId) return nav(`/result/${r.latestRunId}`);
+    nav(`/intro/${r.surveyId}`);
   };
 
   return (
-    <PageShell maxWidth={480}>
-      <Card style={{ padding: "var(--s-5)", borderRadius: 26, background: "rgba(255,255,255,0.18)" }}>
-        <Stack gap={14}>
-          <Stack gap={10}>
-            <Heading level={2}>Maps Of Needs</Heading>
-
-            <Text style={{ lineHeight: 1.5 }}>
-              You need a map to know where You are.
-              <br />
-              And to find the way to where You want to be.
-              <br />
-              Without a map, You are lost.
-            </Text>
-
-            <Heading level={3} style={{ marginTop: 8 }}>
-              What do you need?
+    <PageShell>
+      <Card>
+        <Stack gap={20}>
+          {/* Header */}
+          <Stack gap={4}>
+            <Heading level={1} style={{ fontSize: 28 }}>
+              Maps of Needs
             </Heading>
-
-            <div
-              style={{
-                height: 2,
-                width: 210,
-                background: "rgba(67, 60, 94, 0.55)",
-                borderRadius: 999,
-                marginTop: -6,
-              }}
-            />
+            <Text muted style={{ fontSize: 14 }}>
+              Explore your categories after completing a survey.
+            </Text>
           </Stack>
 
-          {rows.length === 0 ? (
-            <Text muted>No surveys found.</Text>
-          ) : (
-            <Stack gap={14} style={{ marginTop: 6 }}>
+          {status === "loading" && <Text muted>Loading…</Text>}
+
+          {status === "ready" && (
+            <Stack gap={12}>
               {rows.map((r) => {
-                const hasRun = Boolean(r.latestRunId && r.run);
-                const isCompleted = Boolean(r.run?.completedAt);
-                const ratio = r.totalCount > 0 ? r.answeredCount / r.totalCount : 0;
-                const status = hasRun
-                  ? isCompleted
-                    ? statusFromProgress(r.answeredCount, r.totalCount)
-                    : "In progress"
-                  : null;
+                const completed = Boolean(r.run?.completedAt);
+                const pct = completed && r.run ? computeScorePct(r.survey, r.run) : 0;
 
                 return (
                   <div
                     key={r.surveyId}
+                    onClick={() => openSurvey(r)}
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr auto",
-                      gap: 12,
-                      alignItems: "center",
+                      padding: "12px 14px",
+                      borderRadius: 16,
+                      border: "1px solid var(--border)",
+                      background: "rgba(255,255,255,0.35)",
+                      cursor: "pointer",
                     }}
                   >
-                    {/* Left: icon + title + (optional) progress; clickable when run exists */}
-                    <button
-                      type="button"
-                      onClick={() => goToSurvey(r.surveyId, r.run, r.latestRunId)}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        padding: 0,
-                        margin: 0,
-                        textAlign: "left",
-                        cursor: "pointer",
-                        minWidth: 0,
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                        <span aria-hidden="true">{getIconForSurveyId(r.surveyId)}</span>
+                    {/* Row header */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span>{getIconForSurveyId(r.surveyId)}</span>
 
-                        <div style={{ minWidth: 0 }}>
-                          <Text
+                      <Text style={{ fontSize: 15, fontWeight: 600 }}>{r.title}</Text>
+
+                      {!completed && (
+                        <>
+                          {/* dotted leader */}
+                          <div
                             style={{
-                              fontWeight: 650,
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
+                              flex: 1,
+                              height: 1,
+                              margin: "0 8px",
+                              background:
+                                "repeating-linear-gradient(to right, #bbb 0 4px, transparent 4px 8px)",
+                            }}
+                          />
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openSurvey(r);
+                            }}
+                            style={{
+                              background: "#5B3A78",
+                              padding: "8px 22px",
+                              borderRadius: 999,
+                              fontSize: 13,
+                              fontWeight: 600,
                             }}
                           >
-                            {r.title}
-                          </Text>
+                            Explore
+                          </Button>
+                        </>
+                      )}
+                    </div>
 
-                          {/* Only show progress block when we have a run */}
-                          {hasRun ? (
-                            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
-                              <SegmentedBar ratio={ratio} />
-
-                              {/* status column like mock */}
-                              <div
-                                aria-hidden
-                                style={{
-                                  width: 2,
-                                  height: 16,
-                                  background: "rgba(110, 155, 145, 0.55)",
-                                  borderRadius: 999,
-                                }}
-                              />
-
-                              <Text muted style={{ fontWeight: 800 }}>
-                                {status}
-                              </Text>
-                            </div>
-                          ) : null}
-                        </div>
+                    {/* Completed bar */}
+                    {completed && (
+                      <div style={{ marginTop: 10 }}>
+                        <Text style={{ fontSize: 13, marginBottom: 6 }}>
+                          {pctToLabel(pct)}
+                        </Text>
+                        <SegmentedBar ratio={pct / 100} />
+                        <Text muted style={{ fontSize: 12, marginTop: 6 }}>
+                          {pct}%
+                        </Text>
                       </div>
-                    </button>
-
-                    {/* Right: Explore button for “no run yet” OR placeholder surveys */}
-                    {!hasRun ? (
-                      <Button
-                        onClick={() => nav(`/intro/${r.surveyId}`)}
-                        style={{
-                          background: "rgba(67, 60, 94, 0.92)",
-                          color: "#fff",
-                          border: "1px solid transparent",
-                          padding: "8px 14px",
-                          borderRadius: 8,
-                          minWidth: 96,
-                          fontWeight: 700,
-                        }}
-                      >
-                        Explore
-                      </Button>
-                    ) : (
-                      // For run rows we hide the button like the mock (clickable title + bar instead)
-                      <div style={{ width: 96 }} />
                     )}
                   </div>
                 );
@@ -256,23 +219,20 @@ export function HomePage() {
             </Stack>
           )}
 
-          {/* Optional: big CTA like mock (“Compass”) — keep as placeholder for now */}
-          <div style={{ marginTop: 14 }}>
+          {hasCompletedAny && (
             <Button
-              variant="ghost"
+              onClick={() => nav("/compass")}
               style={{
-                width: "100%",
-                borderRadius: 14,
-                padding: "14px 16px",
-                border: "2px solid rgba(67, 60, 94, 0.22)",
-                background: "rgba(67, 60, 94, 0.92)",
-                color: "#fff",
-                fontWeight: 800,
+                marginTop: 12,
+                background: "#4E4964",
+                borderRadius: 18,
+                padding: "14px",
+                fontWeight: 700,
               }}
             >
               Compass
             </Button>
-          </div>
+          )}
         </Stack>
       </Card>
     </PageShell>

@@ -133,7 +133,11 @@ export function CompassPage() {
       surveyTitle: survey.title,
       rows,
     };
+
+    
   }, []);
+
+  
 
   return (
     <PageShell maxWidth={480}>
@@ -229,7 +233,7 @@ export function CompassPage() {
           )}
 
           <Button
-            onClick={() => nav("/needs")}
+            onClick={() => nav("/")}
             style={{
               marginTop: 10,
               width: "100%",

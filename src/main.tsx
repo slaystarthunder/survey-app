@@ -1,3 +1,4 @@
+// /src/main.tsx
 // [S02] Updated: BrowserRouter wiring lives here (app bootstrapping).
 
 import React from "react";
@@ -8,7 +9,7 @@ import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <App />
     </BrowserRouter>
   </React.StrictMode>

@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig({
+  base: "/",
   plugins: [react()],
   resolve: {
     alias: {
@@ -13,7 +14,7 @@ export default defineConfig({
       "@core": fileURLToPath(new URL("./src/core", import.meta.url)),
       "@styles": fileURLToPath(new URL("./src/styles", import.meta.url)),
       "@infra": fileURLToPath(new URL("./src/infra", import.meta.url)),
-      "@app": fileURLToPath(new URL("./src/app", import.meta.url))
+      "@app": fileURLToPath(new URL("./src/app", import.meta.url)),
     },
   },
 });

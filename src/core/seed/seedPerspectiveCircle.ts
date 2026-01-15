@@ -3,165 +3,107 @@
 import type { SurveyBlueprint } from "../domain/types";
 import { surveyRepo } from "../data/surveyRepo";
 
-import type { SurveyBlueprint } from "../domain/types";
+/**
+ * NOTE:
+ * - Scale requires { min, max, step } (step was missing).
+ * - surveyRepo does NOT have upsert(); it has save().
+ * - DevToolsPage expects an exported function named seedPerspectiveCircleSurvey.
+ */
 
 export const presenceAwarenessSurvey: SurveyBlueprint = {
   surveyId: "s_presence_awareness_v1",
   version: 1,
 
-  title: "Presence & Awareness Assessment",
+  title: "Presence & Awareness",
   description:
-    "A self-reflection tool exploring awareness, motivation, flow, and transcendence.",
+    "A short reflective assessment to map your awareness, motivation, and engagement patterns.",
 
   scale: { min: 1, max: 7, step: 1 },
 
   categories: [
-    { categoryId: "c_detached_awareness", label: "Detached Awareness" },
-    { categoryId: "c_dopamine_awareness", label: "Dopamine Awareness" },
-    { categoryId: "c_flow", label: "Absorbed Engagement (Flow)" },
-    { categoryId: "c_transcendence", label: "Transcendence" },
-    { categoryId: "c_overall_presence", label: "Overall Presence & Awareness" },
+    { categoryId: "c_meta_observation", label: "Meta-observation / Detached awareness" },
+    { categoryId: "c_dopamine_awareness", label: "Dopamine awareness / Reward & motivation tracking" },
+    { categoryId: "c_flow_engagement", label: "Absorbed engagement / Flow" },
+    { categoryId: "c_spiritual_connection", label: "Spiritual connection / Transcendence" },
   ],
 
   prompts: [
-    /* ------------------------------------------------------------
-     * 👁️ Detached awareness / meta-observation
-     * ------------------------------------------------------------ */
     {
-      promptId: "da_1",
-      categoryId: "c_detached_awareness",
-      text: "I can easily notice when my mind starts wandering without getting caught up in the thoughts",
+      promptId: "p_meta_01",
+      categoryId: "c_meta_observation",
+      text: "I can notice when my mind is wandering without getting lost in it.",
     },
     {
-      promptId: "da_2",
-      categoryId: "c_detached_awareness",
-      text: "When strong emotions arise I can step back and observe them instead of being swept away",
+      promptId: "p_meta_02",
+      categoryId: "c_meta_observation",
+      text: "I can observe emotions without needing to immediately act on them.",
     },
     {
-      promptId: "da_3",
-      categoryId: "c_detached_awareness",
-      text: "I often catch myself on autopilot (eating, driving, or scrolling without really being present)",
-    },
-    {
-      promptId: "da_4",
-      categoryId: "c_detached_awareness",
-      text: "I regularly pause during the day to simply notice what is happening inside me (thoughts, feelings, body)",
-    },
-    {
-      promptId: "da_5",
-      categoryId: "c_detached_awareness",
-      text: "Even in stressful situations I can maintain a part of me that watches the experience calmly",
+      promptId: "p_meta_03",
+      categoryId: "c_meta_observation",
+      text: "I can recognize impulses as impulses before following them.",
     },
 
-    /* ------------------------------------------------------------
-     * 🍬 Dopamine awareness / reward & motivation tracking
-     * ------------------------------------------------------------ */
     {
-      promptId: "dop_1",
+      promptId: "p_dopa_01",
       categoryId: "c_dopamine_awareness",
-      text: "I can clearly tell the difference between activities that give me a quick thrill and those that feel deeply meaningful",
+      text: "I can tell when I’m chasing short-term reward rather than what truly matters to me.",
     },
     {
-      promptId: "dop_2",
+      promptId: "p_dopa_02",
       categoryId: "c_dopamine_awareness",
-      text: "I often chase short-term dopamine hits (likes, sugar, scrolling) even when I know they won’t satisfy me long-term",
+      text: "I notice what triggers my craving for stimulation or distraction.",
     },
     {
-      promptId: "dop_3",
+      promptId: "p_dopa_03",
       categoryId: "c_dopamine_awareness",
-      text: "I notice when I’m avoiding important but low-reward tasks because they feel boring",
-    },
-    {
-      promptId: "dop_4",
-      categoryId: "c_dopamine_awareness",
-      text: "I regularly reflect on what truly motivates me versus what just gives me a temporary buzz",
-    },
-    {
-      promptId: "dop_5",
-      categoryId: "c_dopamine_awareness",
-      text: "I can sense when my actions are driven by genuine desire rather than a craving for instant gratification",
+      text: "I can choose actions that align with long-term values over quick relief.",
     },
 
-    /* ------------------------------------------------------------
-     * ⚡ Absorbed engagement / flow
-     * ------------------------------------------------------------ */
     {
-      promptId: "flow_1",
-      categoryId: "c_flow",
-      text: "I frequently become completely absorbed in activities so that time seems to disappear",
+      promptId: "p_flow_01",
+      categoryId: "c_flow_engagement",
+      text: "I regularly become fully absorbed in activities that feel meaningful.",
     },
     {
-      promptId: "flow_2",
-      categoryId: "c_flow",
-      text: "When I’m working on something I care about I often lose awareness of myself and my surroundings",
+      promptId: "p_flow_02",
+      categoryId: "c_flow_engagement",
+      text: "When I work on something important, I can stay engaged without constant friction.",
     },
     {
-      promptId: "flow_3",
-      categoryId: "c_flow",
-      text: "It’s hard for me to get fully immersed in tasks because my mind keeps wandering",
-    },
-    {
-      promptId: "flow_4",
-      categoryId: "c_flow",
-      text: "I regularly experience moments where everything feels effortless and I’m in the zone",
-    },
-    {
-      promptId: "flow_5",
-      categoryId: "c_flow",
-      text: "I find it easy to lose myself in creative or challenging activities that match my skills",
+      promptId: "p_flow_03",
+      categoryId: "c_flow_engagement",
+      text: "I experience moments where action feels natural and effortless.",
     },
 
-    /* ------------------------------------------------------------
-     * ✨ Transcendence / spiritual connection
-     * ------------------------------------------------------------ */
     {
-      promptId: "tr_1",
-      categoryId: "c_transcendence",
-      text: "I often feel a deep sense of connection to something larger than myself (nature, humanity, the universe, the divine)",
+      promptId: "p_spirit_01",
+      categoryId: "c_spiritual_connection",
+      text: "I sometimes feel connected to something larger than myself (nature, meaning, life).",
     },
     {
-      promptId: "tr_2",
-      categoryId: "c_transcendence",
-      text: "I frequently experience moments of awe, wonder, or peace that go beyond my personal concerns",
+      promptId: "p_spirit_02",
+      categoryId: "c_spiritual_connection",
+      text: "I can access a sense of awe, wonder, or deep appreciation in daily life.",
     },
     {
-      promptId: "tr_3",
-      categoryId: "c_transcendence",
-      text: "My daily life usually feels separate from any sense of a bigger picture or spiritual meaning",
-    },
-    {
-      promptId: "tr_4",
-      categoryId: "c_transcendence",
-      text: "I regularly have experiences that make me feel part of a greater whole",
-    },
-    {
-      promptId: "tr_5",
-      categoryId: "c_transcendence",
-      text: "I feel spiritually connected or touched by beauty or sacredness more often than not",
-    },
-
-    /* ------------------------------------------------------------
-     * 🌱 Overall presence & awareness
-     * ------------------------------------------------------------ */
-    {
-      promptId: "op_1",
-      categoryId: "c_overall_presence",
-      text: "Right now in my life I generally feel present and aware in most moments of the day",
-    },
-    {
-      promptId: "op_2",
-      categoryId: "c_overall_presence",
-      text: "I often live with a clear, awake sense of being here in the present moment",
-    },
-    {
-      promptId: "op_3",
-      categoryId: "c_overall_presence",
-      text: "Most of the time I feel disconnected from the present and caught up in my mind",
+      promptId: "p_spirit_03",
+      categoryId: "c_spiritual_connection",
+      text: "I feel grounded in a sense of purpose beyond short-term outcomes.",
     },
   ],
 };
 
-export function seedPerspectiveCircleSurvey() {
-  surveyRepo.save(presenceAwarenessSurvey);
-  return presenceAwarenessSurvey.surveyId;
+export function seedPresenceAwarenessSurvey(): SurveyBlueprint {
+  const res = surveyRepo.save(presenceAwarenessSurvey);
+  if (!res.ok) {
+    throw new Error("Seed failed: survey is invalid. Check validateSurvey issues.");
+  }
+  return presenceAwarenessSurvey;
 }
+
+/** Back-compat name expected by /dev/tools */
+export function seedPerspectiveCircleSurvey(): SurveyBlueprint {
+  return seedPresenceAwarenessSurvey();
+}
+

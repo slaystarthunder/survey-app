@@ -16,7 +16,7 @@ export function Text({ muted, mono, style, ...rest }: TextProps) {
     margin: 0,
     color: muted ? "var(--muted)" : "var(--fg)",
     fontFamily: mono ? "var(--font-mono)" : "var(--font-sans)",
-    lineHeight: 1.45,
+    fontSize: 14,
   };
 
   return <p {...rest} style={{ ...base, ...style }} />;
@@ -32,26 +32,37 @@ type HeadingProps = HTMLAttributes<HTMLHeadingElement> & {
   level?: HeadingLevel;
 };
 
+const HEADING_TAG: Record<HeadingLevel, "h1" | "h2" | "h3" | "h4" | "h5" | "h6"> = {
+  1: "h1",
+  2: "h2",
+  3: "h3",
+  4: "h4",
+  5: "h5",
+  6: "h6",
+};
+
 export function Heading({ level = 1, style, ...rest }: HeadingProps) {
-  const Tag = `h${level}` as keyof JSX.IntrinsicElements;
+  const Tag = HEADING_TAG[level];
 
   const base: CSSProperties = {
     margin: 0,
 
-    /* 👇 Primary brand color for headings */
+    // Brand color for headings
     color: "var(--primary)",
 
     fontFamily: "var(--font-sans)",
     fontWeight: 800,
-    lineHeight: 1.2,
 
-    /* Size scale */
     fontSize:
-      level === 1 ? "2rem" :
-      level === 2 ? "1.6rem" :
-      level === 3 ? "1.3rem" :
-      level === 4 ? "1.1rem" :
-      "1rem",
+      level === 1
+        ? "2.2rem"
+        : level === 2
+        ? "1.6rem"
+        : level === 3
+        ? "1.3rem"
+        : level === 4
+        ? "1.1rem"
+        : "1rem",
   };
 
   return <Tag {...rest} style={{ ...base, ...style }} />;

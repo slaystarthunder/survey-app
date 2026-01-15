@@ -1,5 +1,5 @@
 // /src/infra/firebase/authFirebaseProvider.ts
-// Real Google auth provider (Firebase Auth). Not wired into UI yet.
+// Real Google auth provider (Firebase Auth).
 
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import type { AuthProvider as IAuthProvider } from "@core/auth/authProvider";
@@ -16,45 +16,33 @@ function toAuthUser(u: import("firebase/auth").User): AuthUser {
 }
 
 export function createFirebaseAuthProvider(): IAuthProvider {
-  const auth = getAuth(getFirebaseApp());
-  let state: AuthState = { status: "loading", user: null };
-  const listeners = new Set<(s: AuthState) => void>();
+  const app = getFirebaseApp();
+  const auth = getAuth(app);
+  const google = new GoogleAuthProvider();
 
-  const emit = () => {
-    for (const cb of listeners) cb(state);
-  };
-
-  onAuthStateChanged(auth, (u) => {
-    state = u
-      ? { status: "authed", user: toAuthUser(u) }
-      : { status: "anon", user: null };
-    emit();
-  });
+  let latest: AuthState = { status: "loading", user: null };
 
   return {
-    getState() {
-      return state;
-    },
+    getState: () => latest,
 
-    onAuthStateChanged(cb) {
-      listeners.add(cb);
-      cb(state);
-      return () => listeners.delete(cb);
+    onAuthStateChanged(cb: (s: AuthState) => void) {
+      const unsub = onAuthStateChanged(auth, (u) => {
+        latest = u ? { status: "authed", user: toAuthUser(u) } : { status: "anon", user: null };
+        cb(latest);
+      });
+
+      // Ensure callers don't stay in "loading" forever if Firebase is slow:
+      cb(latest);
+
+      return unsub;
     },
 
     async signInWithGoogle() {
-      const provider = new GoogleAuthProvider();
-      const res = await signInWithPopup(auth, provider);
-      const user = toAuthUser(res.user);
-      state = { status: "authed", user };
-      emit();
-      return user;
+      await signInWithPopup(auth, google);
     },
 
     async signOut() {
       await signOut(auth);
-      state = { status: "anon", user: null };
-      emit();
     },
   };
 }

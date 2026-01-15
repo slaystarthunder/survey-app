@@ -1,85 +1,81 @@
 // /src/pages/results/ResultPage.tsx
-// Orchestration for new result screen
+// Orchestration for result screen
 
 import { useMemo } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import { PageShell } from "@ui/PageShell";
 import { Heading, Text } from "@ui/Text";
 
 import { runRepo } from "@core/data/runRepo";
 import { surveyRepo } from "@core/data/surveyRepo";
-import { computeSummary } from "@core/domain/computeSummary";
+import type { ResponseState, SurveyBlueprint } from "@core/domain/types";
 
 import { ResultView } from "@features/results/ResultView";
 
-// Firebase “Save to account”
-import { services } from "@app/services";
-import { useAuthState } from "@infra/auth/useAuthState";
-import { runRepoFirebase } from "@infra/firebase/repos/runRepoFirebase";
+type Row = {
+  categoryId: string;
+  label: string;
+  avg: number | null;
+};
+
+function computeRows(run: ResponseState, survey: SurveyBlueprint): Row[] {
+  // group promptIds by category
+  const promptIdsByCategory = new Map<string, string[]>();
+  for (const p of survey.prompts) {
+    const arr = promptIdsByCategory.get(p.categoryId) ?? [];
+    arr.push(p.promptId);
+    promptIdsByCategory.set(p.categoryId, arr);
+  }
+
+  return survey.categories.map((c) => {
+    const ids = promptIdsByCategory.get(c.categoryId) ?? [];
+    const vals: number[] = [];
+
+    for (const pid of ids) {
+      const v = run.answers[pid];
+      if (typeof v === "number" && Number.isFinite(v)) vals.push(v);
+    }
+
+    const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+
+    return {
+      categoryId: c.categoryId,
+      label: c.label,
+      avg,
+    };
+  });
+}
 
 export function ResultPage() {
-  const { runId = "" } = useParams();
   const nav = useNavigate();
-  const loc = useLocation();
+  const params = useParams();
+  const runId = params.runId ?? "";
 
-  const run = useMemo(
-    () => (runId ? runRepo.getRun(runId) : null),
-    [runId]
-  );
+  const run = useMemo(() => (runId ? runRepo.getRun(runId) : null), [runId]);
+  const survey = useMemo(() => (run ? surveyRepo.get(run.surveyId) : null), [run]);
 
-  const survey = useMemo(
-    () => (run ? surveyRepo.get(run.surveyId) : null),
-    [run]
-  );
-
-  // Auth singleton (composition root)
-  const auth = useMemo(() => services.auth, []);
-  const authState = useAuthState(auth);
-  const uid = authState.user?.uid ?? null;
+  const rows = useMemo(() => {
+    if (!run || !survey) return [];
+    return computeRows(run, survey);
+  }, [run, survey]);
 
   if (!run || !survey) {
     return (
       <PageShell>
-        <Heading level={2}>Result error</Heading>
+        <Heading level={2}>Result not found</Heading>
         <Text muted>Missing run or survey.</Text>
       </PageShell>
     );
   }
-
-  const summary = computeSummary(survey, run.answers);
-
-  const rows = survey.categories.map((c) => ({
-    categoryId: c.categoryId,
-    label: c.label,
-    avg: summary.byCategory[c.categoryId]?.avg ?? null,
-  }));
 
   return (
     <ResultView
       rows={rows}
       scaleMax={survey.scale.max}
       surveyTitle={survey.title}
-      onNeedsMap={() => nav("/needs")}
+      onNeedsMap={() => nav("/")}
       onReassess={() => nav(`/intro/${survey.surveyId}`)}
-      onDownload={() => nav(`/result/${run.runId}/finished`)}
-      onSave={async () => {
-        // Phase 1 behavior: auth is explicit via /login
-        if (!uid) {
-          nav("/login", { replace: true, state: { from: loc.pathname } });
-          return;
-        }
-
-        try {
-          await runRepoFirebase.saveRun(uid, run);
-          alert("Saved to account ✅");
-        } catch (e) {
-          console.error(e);
-          alert(
-            `Save failed: ${e instanceof Error ? e.message : String(e)}`
-          );
-        }
-      }}
     />
   );
 }

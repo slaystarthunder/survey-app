@@ -1,6 +1,7 @@
 // /src/infra/firebase/firebaseApp.ts
 
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
+import { getAuth, type Auth } from "firebase/auth";
 
 /**
  * Firebase config via Vite env:
@@ -30,3 +31,6 @@ export function getFirebaseApp(): FirebaseApp {
   if (apps.length) return apps[0]!;
   return initializeApp(readConfig());
 }
+
+// ✅ Export a singleton Auth instance
+export const auth: Auth = getAuth(getFirebaseApp());

@@ -1,120 +1,74 @@
-// [S02] Added: Dev tools page with "export src snapshot" button (src/** -> JSON download).
-// [SEED] Extended: Manual seed button for client survey JSON.
-// [V2.4] Added: Quick links to key dev routes.
+// /src/pages/dev/DevToolsPage.tsx
+
+import { PageShell } from "@ui/PageShell";
+import { Heading, Text } from "@ui/Text";
+import { Button } from "@ui/Button";
 
 import { seedPerspectiveCircleSurvey } from "@core/seed/seedPerspectiveCircle";
+import { surveyRepoFirebase } from "@infra/firebase/repos/surveyRepoFirebase";
 
 
-function downloadJson(filename: string, data: unknown) {
-  const json = JSON.stringify(data, null, 2);
-  const blob = new Blob([json], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
+import { seedMockupSurveyHeadlinesToFirebase } from "@core/seed/seedMockupSurveyHeadlinesToFirebase";
 
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
 
-  URL.revokeObjectURL(url);
-}
 
 export function DevToolsPage() {
-  const exportSnapshot = async () => {
-    const files = import.meta.glob("/src/**/*", { eager: true, as: "raw" }) as Record<string, string>;
-
-    const snapshot = {
-      snapshotVersion: 1,
-      generatedAt: new Date().toISOString(),
-      files,
-    };
-
-    const stamp = snapshot.generatedAt.replace(/[:.]/g, "-");
-    downloadJson(`survey-app-src-snapshot-${stamp}.json`, snapshot);
-  };
-
-  const seedPerspectiveCircle = () => {
-    const surveyId = seedPerspectiveCircleSurvey();
-    alert(`Seeded survey: ${surveyId}`);
-  };
-
-  const linkStyle: React.CSSProperties = {
-    display: "inline-block",
-    padding: "6px 10px",
-    border: "1px solid rgba(255,255,255,0.12)",
-    borderRadius: 8,
-    textDecoration: "none",
-  };
-
-  const codeStyle: React.CSSProperties = {
-    fontFamily:
-      "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-    fontSize: 12,
-    opacity: 0.85,
-  };
-
-  const buttonStyle: React.CSSProperties = { padding: "8px 12px", cursor: "pointer" };
-
   return (
-    <div style={{ padding: 16 }}>
-      <h1>Dev Tools</h1>
+    <PageShell maxWidth={560}>
+      <Heading level={2}>Dev Tools</Heading>
+      <Text muted style={{ marginTop: 6, lineHeight: 1.6 }}>
+        Seed surveys into local storage. This is dev-only.
+      </Text>
 
-      {/* Quick links */}
-      <section style={{ marginTop: 16 }}>
-        <h2 style={{ margin: "0 0 8px" }}>Quick links</h2>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-          <a href="/admin/surveys" style={linkStyle}>
-            Admin surveys
-          </a>
+      <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
+        <Button
+          onClick={() => {
+            try {
+              seedPerspectiveCircleSurvey();
+              alert("Seeded: Presence & Awareness ✅ (local)");
+            } catch (e) {
+              alert(`Seed failed: ${e instanceof Error ? e.message : String(e)}`);
+            }
+          }}
+        >
+          Seed Presence & Awareness survey (local)
+        </Button>
 
-          <a href="/dev/storage" style={linkStyle}>
-            Dev storage
-          </a>
+        {/* ✅ NEW */}
+        <Button
+          onClick={async () => {
+            try {
+              const survey = seedPerspectiveCircleSurvey(); // now returns blueprint
+              await surveyRepoFirebase.save(survey);
+              const all = await surveyRepoFirebase.list();
+              alert(`Saved to Firestore ✅ Surveys in Firestore: ${all.length}`);
+            } catch (e) {
+              alert(`Firestore save failed: ${e instanceof Error ? e.message : String(e)}`);
+            }
+          }}
+        >
+          Seed + Save Presence & Awareness to Firestore
+        </Button>
 
-          <a href="/result/RUN_ID/finished" style={linkStyle}>
-            Result / PDF page
-          </a>
-        </div>
+        <Button variant="ghost" onClick={() => (window.location.href = "/")}>
+          Back to app
+        </Button>
 
-        <p style={{ marginTop: 10, opacity: 0.75 }}>
-          Tip: Replace <span style={codeStyle}>RUN_ID</span> in the URL (example:{" "}
-          <span style={codeStyle}>/result/r_abc123/finished</span>).
-        </p>
-      </section>
+        <Button
+          onClick={async () => {
+            try {
+              await seedMockupSurveyHeadlinesToFirebase();
+              alert("Seeded mockup survey headlines to Firestore ✅");
+            } catch (e) {
+              alert(`Seed failed: ${e instanceof Error ? e.message : String(e)}`);
+            }
+          }}
+        >
+          Seed mockup survey headlines (Firestore)
+        </Button>
 
-      <hr style={{ margin: "24px 0" }} />
 
-      {/* Export */}
-      <section>
-        <h2 style={{ margin: "0 0 8px" }}>Export</h2>
-        <p>
-          Export a JSON snapshot of <code>src/**</code>.
-        </p>
-
-        <button onClick={exportSnapshot} style={buttonStyle}>
-          Export src snapshot (JSON)
-        </button>
-
-        <p style={{ marginTop: 12, opacity: 0.75 }}>
-          Note: this snapshot includes files under <code>src/</code> that Vite can import as raw text.
-        </p>
-      </section>
-
-      <hr style={{ margin: "24px 0" }} />
-
-      {/* Seed data */}
-      <section>
-        <h2 style={{ margin: "0 0 8px" }}>Seed data</h2>
-
-        <p>
-          Manually write client survey JSON into localStorage via <code>surveyRepo</code>.
-        </p>
-
-        <button onClick={seedPerspectiveCircle} style={buttonStyle}>
-          Seed “Perspective Circle” survey
-        </button>
-      </section>
-    </div>
+      </div>
+    </PageShell>
   );
 }
